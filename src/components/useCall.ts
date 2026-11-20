@@ -35,6 +35,7 @@ export function useCall() {
   const [mood, setMood] = useState<AgentMood>("idle");
   const [state, setState] = useState<PublicState | null>(null);
   const [muted, setMuted] = useState(false);
+  const [noMic, setNoMic] = useState(false);
   const rtc = useRef<IAgoraRTCClient | null>(null);
   const mic = useRef<IMicrophoneAudioTrack | null>(null);
   const rtm = useRef<{ logout: () => Promise<unknown> } | null>(null);
@@ -89,11 +90,18 @@ export function useCall() {
       setState(null);
       setPhase("starting");
       try {
-        // Ask for the microphone first, so a refusal stops before an agent is started.
+        // Ask for the microphone first. Without one (refused, or no device) the call still
+        // starts: the agent talks, and the caller types instead.
         const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
         AgoraRTC.setLogLevel(3);
-        const track = await AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true, AGC: true });
+        let track: IMicrophoneAudioTrack | null = null;
+        try {
+          track = await AgoraRTC.createMicrophoneAudioTrack({ AEC: true, ANS: true, AGC: true });
+        } catch {
+          track = null;
+        }
         mic.current = track;
+        setNoMic(!track);
 
         const res = await fetch("/api/session", {
           method: "POST",
@@ -117,7 +125,7 @@ export function useCall() {
           if (mediaType === "audio") user.audioTrack?.play();
         });
         await client.join(s.appId, s.channel, s.token, s.uid);
-        await client.publish([track]);
+        if (track) await client.publish([track]);
         rtc.current = client;
 
         poll.current = setInterval(() => refresh(s.sid).catch(() => {}), 1500);
@@ -167,5 +175,18 @@ export function useCall() {
     };
   }, []);
 
-  return { phase, error, sid, lines, mood, state, muted, start, stop, toggleMute, refresh };
+  const typeLine = useCallback(
+    async (text: string) => {
+      if (!sid || !text.trim()) return;
+      upsertLine({ key: `typed-${Date.now()}`, who: "you", text: text.trim(), final: true });
+      setMood("thinking");
+      const r = await fetch("/api/type", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sid, text }) });
+      const j = (await r.json().catch(() => ({}))) as { reply?: string; error?: string };
+      if (!r.ok) upsertLine({ key: `typed-err-${Date.now()}`, who: "agent", text: j.error || "Couldn't send that", final: true });
+      await refresh(sid).catch(() => {});
+    },
+    [sid, upsertLine, refresh],
+  );
+
+  return { phase, error, sid, lines, mood, state, muted, noMic, start, stop, toggleMute, refresh, typeLine };
 }

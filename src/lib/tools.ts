@@ -210,7 +210,12 @@ export async function runTool(sid: string, name: string, raw: unknown): Promise<
       logActivity(s, s.stores.length ? `Nearest Jan Aushadhi store: ${s.stores[0].name}, ${s.stores[0].km} km` : "No stores found near that location");
       found = {
         near: s.location.label,
-        stores: s.stores.map((k) => ({ name: k.name, address: k.address, km: k.km, phone: k.phone ?? null })),
+        stores: s.stores.map((k) => ({
+          say_as: `the Jan Aushadhi store at ${k.address.split(",").slice(0, 2).join(",").replace(/\b\d{3,}\b/g, "").replace(/\s+/g, " ").trim()}`,
+          address: k.address,
+          km: k.km,
+        })),
+        note: "Distances are approximate (from the centre of the store's PIN code). Don't read store codes aloud.",
       };
     });
     return { content: JSON.stringify(found), isError: "error" in found };

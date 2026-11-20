@@ -17,7 +17,7 @@ export async function GET(_req: NextRequest, ctx: RouteContext<"/api/ics/[sid]">
     const what = med?.ja ? `Buy ${med.ja.name} (Jan Aushadhi code ${med.ja.code}) instead of ${med.brand}` : `Refill ${r.brand}`;
     return [
       "BEGIN:VEVENT",
-      `UID:${sid}-${r.medId}@dawa-twin`,
+      `UID:${sid}-${r.medId}@same-salt`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${day}`,
       `SUMMARY:${esc(`Refill: ${r.brand}`)}`,

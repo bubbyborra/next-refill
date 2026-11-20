@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { lang?: string; lat?: number; lon?: number };
   const lang = getLang(body.lang);
   const sid = newId();
-  const channel = `dt-${sid}`;
+  const channel = `ss-${sid}`;
   const userUid = 10000 + Math.floor(Math.random() * 80000);
   const agentUid = 100;
   const state: CallState = { sid, lang: lang.code, createdAt: Date.now(), channel, userUid, agentUid, meds: [], activity: [] };
@@ -44,7 +44,7 @@ export async function DELETE(req: Request) {
   const sid = new URL(req.url).searchParams.get("sid") || "";
   const s = await getState(sid);
   if (!s) return jsonError("call not found", 404);
-  if (s.agentId && !s.ended) await stopAgent(s.agentId).catch((e) => console.error("stop failed", e));
+  if (s.agentId && !s.ended) await stopAgent({ agentId: s.agentId, channel: s.channel, agentUid: s.agentUid }).catch((e) => console.error("stop failed", e));
   await updateState(sid, (x) => {
     x.ended = true;
     logActivity(x, "Call ended");

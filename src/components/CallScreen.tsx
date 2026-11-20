@@ -103,6 +103,7 @@ export function CallScreen() {
               </div>
             </div>
             <Transcript lines={call.lines} />
+            {live && <TypeBox onSend={call.typeLine} prominent={call.noMic} />}
             {live && call.sid && <StripCamera sid={call.sid} onDone={() => call.refresh(call.sid!)} />}
             <Activity state={call.state} />
           </div>
@@ -152,7 +153,10 @@ function MoodPill({ mood, ended }: { mood: string; ended: boolean }) {
 
 function Transcript({ lines }: { lines: ReturnType<typeof useCall>["lines"] }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [lines]);
+  useEffect(() => {
+    // newer browsers return a promise from scrollIntoView; an effect must return nothing
+    void end.current?.scrollIntoView({ block: "nearest" });
+  }, [lines]);
   return (
     <div className="mt-4 h-80 overflow-y-auto pr-1" aria-live="polite">
       {lines.length === 0 && <p className="text-ink-soft">Say hello. The agent speaks first, then listens.</p>}
@@ -169,6 +173,35 @@ function Transcript({ lines }: { lines: ReturnType<typeof useCall>["lines"] }) {
       ))}
       <div ref={end} />
     </div>
+  );
+}
+
+function TypeBox({ onSend, prominent }: { onSend: (t: string) => Promise<void>; prominent: boolean }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="mt-3 flex gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!text.trim() || busy) return;
+        setBusy(true);
+        const t = text;
+        setText("");
+        await onSend(t);
+        setBusy(false);
+      }}
+    >
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder={prominent ? "No microphone? Type here, e.g. Telma 40, one a day, 230 for 30" : "Too noisy? Type instead"}
+        className={`min-w-0 flex-1 rounded-full border bg-white px-4 py-2.5 text-[15px] outline-none focus:border-accent ${prominent ? "border-accent" : "border-line"}`}
+      />
+      <button disabled={busy || !text.trim()} className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
+        {busy ? "…" : "Send"}
+      </button>
+    </form>
   );
 }
 

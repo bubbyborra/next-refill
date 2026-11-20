@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     const line = reading.readable && comp
       ? `${lang.code === "en" ? "I can see" : ""} ${reading.brand_name ?? ""}: ${comp}${reading.mrp_rupees ? `, ${Math.round(reading.mrp_rupees)} ${lang.rupees} / ${reading.units_per_pack ?? "?"}` : ""}.`
       : lang.failure;
-    await speak(s.agentId, line.trim()).catch((e) => console.error("speak failed", e));
+    await speak({ agentId: s.agentId, channel: s.channel, agentUid: s.agentUid }, line.trim()).catch((e) => console.error("speak failed", e));
   }
   return Response.json({ reading, summary });
 }

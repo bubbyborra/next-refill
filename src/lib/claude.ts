@@ -38,6 +38,15 @@ export async function runVoiceTurn(opts: {
 
   let rounds = 0;
   let stop: string | null = null;
+  let lastChar = "";
+  let roundStart = false;
+  const emit = (d: string) => {
+    // keep a space between text from different rounds ("…search. Both…")
+    if (roundStart && lastChar && !/\s/.test(lastChar) && !/^\s/.test(d)) d = " " + d;
+    roundStart = false;
+    if (d) lastChar = d[d.length - 1];
+    opts.hooks.onText(d);
+  };
   let retries = 0;
   while (rounds < (opts.maxRounds ?? 5)) {
     rounds++;
@@ -49,7 +58,8 @@ export async function runVoiceTurn(opts: {
       messages,
       ...(modelParams(opts.model ?? MODEL) as Partial<Anthropic.MessageCreateParamsStreaming>),
     });
-    stream.on("text", (delta) => opts.hooks.onText(delta));
+    roundStart = true;
+    stream.on("text", (delta) => emit(delta));
     stream.on("streamEvent", (event) => {
       if (event.type === "content_block_start" && event.content_block.type === "tool_use") opts.hooks.onToolStart();
     });

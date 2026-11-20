@@ -60,6 +60,7 @@ export interface CallState {
   sent?: { at: number; reminders: { medId: string; brand: string; date: string }[] };
   strip?: { at: number; summary: string };
   voiceNoteUrl?: string;
+  typed?: { user: string; agent: string }[];
   activity: Activity[];
   ended?: boolean;
 }
