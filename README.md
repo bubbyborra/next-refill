@@ -71,6 +71,7 @@ Limits, in numbers: zero real users; the break test covers matching only, not sp
 - The brand-to-composition step uses an AI model's knowledge of Indian brands. That's why it asks you to check the strip, and why the camera reads the strip directly.
 - It can't order medicines or check a store's stock: there's no public API for either.
 - The lines in Kannada, Malayalam, Bengali, Marathi and Gujarati haven't been checked by native speakers yet.
+- Spoken calls are tested end to end with synthetic voices in Telugu and Hindi (`scripts/demo_path.mjs`), not yet with many real speakers or in a noisy hall.
 - Not medical advice. It only compares prices for the same composition; show the list to your pharmacist, and to your doctor if in doubt.
 
 ## Run it locally
