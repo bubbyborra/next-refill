@@ -86,7 +86,9 @@ export function CallScreen({ children, footer }: { children?: ReactNode; footer?
                   <a href="?state=call" className="nr-samplelink">
                     No microphone? See a sample call
                   </a>
-                  <p className="nr-fine">A voice call in your browser. No sign-up, no phone number: you get the list by scanning a QR code.</p>
+                  <p className="nr-fine">
+                    A voice call in your browser, run on Agora&apos;s Conversational AI with Murf Falcon voices. No sign-up, no phone number: you get the list by scanning a QR code.
+                  </p>
                 </div>
               </div>
               {call.error && (

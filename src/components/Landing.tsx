@@ -59,6 +59,7 @@ function WhatIsJanAushadhi() {
                 <p className="nr-ja__price">
                   ₹12.38 <span>for 10 tablets</span>
                 </p>
+                <p className="nr-ja__code">about ₹37 a month at one a day</p>
               </div>
             </div>
             <figcaption className="nr-ja__src">Official PMBI product list, read 20 Nov 2026.</figcaption>
