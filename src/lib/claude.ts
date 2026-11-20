@@ -59,9 +59,31 @@ export async function runVoiceTurn(opts: {
       ...(modelParams(opts.model ?? MODEL) as Partial<Anthropic.MessageCreateParamsStreaming>),
     });
     roundStart = true;
-    stream.on("text", (delta) => emit(delta));
+    // With reasoning off, the model sometimes "thinks aloud" one line before a tool call
+    // ("Amlong 5 is Amlodipine 5 mg tablet."), often in English. Hold each round's first
+    // sentence: drop it if a tool call follows, otherwise send it once a second sentence
+    // starts or the round ends.
+    let held = "";
+    let flowing = false;
+    const SENTENCE_END = /[.!?।]\s+\S/;
+    stream.on("text", (delta) => {
+      if (flowing) return emit(delta);
+      held += delta;
+      if (SENTENCE_END.test(held)) {
+        flowing = true;
+        emit(held);
+        held = "";
+      }
+    });
     stream.on("streamEvent", (event) => {
-      if (event.type === "content_block_start" && event.content_block.type === "tool_use") opts.hooks.onToolStart();
+      if (event.type === "content_block_start" && event.content_block.type === "tool_use") {
+        if (!flowing) held = "";
+        opts.hooks.onToolStart();
+      }
+      if (event.type === "message_stop" && !flowing && held) {
+        emit(held);
+        held = "";
+      }
     });
 
     const tRound = Date.now();

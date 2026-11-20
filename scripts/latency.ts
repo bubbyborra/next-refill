@@ -8,10 +8,11 @@ import { TOOLS, runTool } from "../src/lib/tools";
 
 const model = process.argv[2] || "claude-opus-5-5";
 const sid = "latency" + Math.random().toString(36).slice(2, 8);
-const lang = getLang("te");
+const lang = getLang(process.argv[3] || "te");
+const said = process.argv[4] || "మా నాన్నగారు Telma 40 రోజుకు ఒకటి వేసుకుంటారు. 30 టాబ్లెట్లు 230 రూపాయలు.";
 
 async function main() {
-  await putState({ sid, lang: "te", createdAt: Date.now(), channel: "x", userUid: 1, agentUid: 2, meds: [], activity: [] });
+  await putState({ sid, lang: lang.code, createdAt: Date.now(), channel: "x", userUid: 1, agentUid: 2, meds: [], activity: [] });
   const state = (await getState(sid))!;
   const t0 = Date.now();
   let first = -1;
@@ -23,7 +24,7 @@ async function main() {
     messages: [
       { role: "user", content: "(The call has connected.)" },
       { role: "assistant", content: lang.greeting },
-      { role: "user", content: "మా నాన్నగారు Telma 40 రోజుకు ఒకటి వేసుకుంటారు. 30 టాబ్లెట్లు 230 రూపాయలు." },
+      { role: "user", content: said },
     ],
     stateNote: stateNote(state),
     tools: TOOLS,
