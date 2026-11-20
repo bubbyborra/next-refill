@@ -24,8 +24,8 @@ async function main() {
   const channel = s?.channel ?? `nr-${sid}`;
   const agentUid = s?.agentUid ?? 100;
   const appid = process.env.AGORA_APP_ID!;
-  const token = generateConvoAIToken({ appId: appid, appCertificate: process.env.AGORA_APP_CERTIFICATE!, channelName: channel, uid: agentUid });
-  const opts = { headers: { Authorization: `agora token=${token}` } };
+  // Agora's REST API takes each token once, so every request gets a fresh one.
+  const fresh = () => ({ headers: { Authorization: `agora token=${generateConvoAIToken({ appId: appid, appCertificate: process.env.AGORA_APP_CERTIFICATE!, channelName: channel, uid: agentUid })}` } });
   const client = agora();
   const show = async (label: string, fn: () => Promise<unknown>) => {
     try {
@@ -45,18 +45,18 @@ async function main() {
       // stopped (4) and failed (6) agents aren't listed unless asked for
       const items: unknown[] = [];
       for (const state of ["2", "4", "6"]) {
-        const page = await client.agents.list({ appid, channel, state, from_time: Math.floor(Date.now() / 1000) - 86400, limit: 5 }, opts);
+        const page = await client.agents.list({ appid, channel, state, from_time: Math.floor(Date.now() / 1000) - 86400, limit: 5 }, fresh());
         for await (const it of page) items.push({ state, ...(it as object) });
       }
       return items;
     })) as { agent_id?: string }[] | null;
-    agentId = found?.[0]?.agent_id;
+    agentId = (process.argv.find((a) => a.startsWith("--agent="))?.slice(8)) || found?.[0]?.agent_id;
   }
   console.log({ sid, channel, agentUid, agentId: agentId ?? "(not found)", stateFound: Boolean(s) });
   if (!agentId) return;
-  await show("agent", () => client.agents.get({ appid, agentId }, opts));
-  await show("history", () => client.agents.getHistory({ appid, agentId }, opts));
-  await show("turns", () => client.agents.getTurns({ appid, agentId } as never, opts));
+  await show("agent", () => client.agents.get({ appid, agentId }, fresh()));
+  await show("history", () => client.agents.getHistory({ appid, agentId }, fresh()));
+  await show("turns", () => client.agents.getTurns({ appid, agentId } as never, fresh()));
 }
 
 main();
