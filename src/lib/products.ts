@@ -91,7 +91,6 @@ const SYNONYMS: Record<string, string> = {
   frusemide: "furosemide",
   glyburide: "glibenclamide",
   albuterol: "salbutamol",
-  "valproic acid": "sodium valproate",
   valproate: "sodium valproate",
   "metformin hcl": "metformin",
 };
