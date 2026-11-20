@@ -44,7 +44,7 @@ export function CallScreen() {
             <span className="nr-brand__tag">{PRODUCT.tagline}</span>
           </a>
           <a href="#how" className="nr-top__link">
-            How it checks
+            How it matches
           </a>
         </div>
       </header>
@@ -82,7 +82,7 @@ export function CallScreen() {
                   <a href="?state=call" className="nr-samplelink">
                     No microphone? See a sample call
                   </a>
-                  <p className="nr-fine">Uses your microphone. No sign-up.</p>
+                  <p className="nr-fine">A voice call in your browser. No sign-up, no phone number: you get the list by scanning a QR code.</p>
                 </div>
               </div>
               {call.error && (
@@ -424,7 +424,7 @@ function SampleBill() {
           {PRODUCT.name}
         </span>
         <p className="nr-sample__cap" id="sample-cap">
-          Illustration of a finished list
+          From a sample call
         </p>
       </div>
       <div className="nr-sample__card">
@@ -439,9 +439,11 @@ function SampleBill() {
           ))}
         </div>
         <div className="nr-sample__total">
-          <p className="nr-sample__small">The call works out</p>
-          <p className="nr-sample__big">your monthly saving</p>
-          <p className="nr-sample__small">from your strip&apos;s price and the government&apos;s list</p>
+          <p className="nr-sample__small">Saved every month in the sample call</p>
+          <p className="nr-sample__big">₹{SAMPLE_STATE.totals.monthlySaving}</p>
+          <p className="nr-sample__small">
+            ₹{SAMPLE_STATE.totals.monthlyBrand} at the chemist (the caller&apos;s prices), ₹{SAMPLE_STATE.totals.monthlyJa} at Jan Aushadhi
+          </p>
         </div>
       </div>
     </figure>
@@ -451,7 +453,7 @@ function SampleBill() {
 function HowItChecks() {
   return (
     <section id="how" className="nr-how">
-      <p className="nr-how__label">How it checks</p>
+      <p className="nr-how__label">How it matches medicines</p>
       <div className="nr-how__cols">
         <div className="nr-how__col">
           <h3 className="nr-how__title">Same medicine only</h3>
