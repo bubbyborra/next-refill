@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PRODUCT } from "@/lib/brand";
 import { getLang } from "@/lib/languages";
 import type { PublicState } from "./useCall";
+import { SAMPLE_STATE } from "@/lib/sample";
 
 const rupees = (n?: number | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
@@ -12,6 +13,10 @@ export function PhoneList({ sid }: { sid: string }) {
   const [s, setS] = useState<PublicState | null>(null);
   const [missing, setMissing] = useState(false);
   useEffect(() => {
+    if (sid === "sample") {
+      setS(SAMPLE_STATE);
+      return;
+    }
     let alive = true;
     const load = async () => {
       const r = await fetch(`/api/state?sid=${sid}`, { cache: "no-store" });
@@ -43,6 +48,7 @@ export function PhoneList({ sid }: { sid: string }) {
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-12 pt-5">
       <p className="text-sm font-semibold text-accent">{PRODUCT.name}</p>
+      {sid === "sample" && <p className="mt-2 rounded-xl bg-cream px-3 py-2 text-xs text-ink">Sample list from a real test call (21 Nov 2026), shown as an illustration.</p>}
       <h1 className="mt-1 text-2xl font-bold text-ink">Show this to the pharmacist</h1>
       <p className="mt-1 text-sm text-ink-soft">Same salt, same strength, from the Jan Aushadhi list. Ask your doctor if in doubt.</p>
 
@@ -90,7 +96,7 @@ export function PhoneList({ sid }: { sid: string }) {
       )}
 
       <div className="mt-5 grid gap-3">
-        {s.meds.length > 0 && <ListenButton sid={sid} label={`Listen in ${getLang(s.lang).native}`} />}
+        {s.meds.length > 0 && sid !== "sample" && <ListenButton sid={sid} label={`Listen in ${getLang(s.lang).native}`} />}
         {s.sent && (
           <a href={`/api/ics/${sid}`} className="rounded-full border border-ink px-4 py-3 text-center font-semibold text-ink">
             Add monthly refill reminders (from {s.sent.reminders[0]?.date})

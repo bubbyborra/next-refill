@@ -5,13 +5,24 @@ import { LANGS } from "@/lib/languages";
 import { PRODUCT } from "@/lib/brand";
 import { useCall, type PublicState } from "./useCall";
 import { StripCamera } from "./StripCamera";
+import { SAMPLE_LINES, SAMPLE_STATE } from "@/lib/sample";
 
 const rupees = (n: number | undefined | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
 export function CallScreen() {
   const [lang, setLang] = useState("te");
-  const call = useCall();
-  const live = call.phase === "live";
+  const real = useCall();
+  // "?state=call" or "?state=ended" shows a labelled sample call (a real test call's data):
+  // a demo without a microphone, and every screen reachable for checks.
+  const [sample, setSample] = useState<null | "call" | "ended">(null);
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("state");
+    if (v === "call" || v === "ended") setSample(v);
+  }, []);
+  const call = sample
+    ? { ...real, phase: (sample === "call" ? "live" : "ended") as typeof real.phase, mood: "listening" as const, lines: SAMPLE_LINES, state: SAMPLE_STATE, sid: "sample" }
+    : real;
+  const live = call.phase === "live" && !sample;
   const showPanel = call.phase !== "idle" && call.phase !== "starting" && call.phase !== "error";
 
   return (
@@ -69,6 +80,9 @@ export function CallScreen() {
               </button>
               <p className="text-sm text-ink-soft">Uses your microphone. No sign-up.</p>
             </div>
+            <a href="?state=call" className="mt-4 inline-block text-sm font-semibold text-accent underline-offset-4 hover:underline">
+              No microphone? See a sample call
+            </a>
             {call.error && (
               <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral" role="alert">
                 {call.error}
@@ -80,6 +94,15 @@ export function CallScreen() {
       )}
 
       {showPanel && (
+        <>
+        {sample && (
+          <p className="mt-6 rounded-2xl bg-cream px-4 py-3 text-sm text-ink">
+            <span className="font-semibold">Sample call</span>: an illustration built from a real test call on 21 Nov 2026 (typed in Telugu). Prices are as the caller said them; Jan Aushadhi prices are from the official list.{" "}
+            <a href="/" className="font-semibold text-accent underline-offset-4 hover:underline">
+              Start your own call
+            </a>
+          </p>
+        )}
         <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
           <div className="flex flex-col rounded-3xl border border-line bg-paper p-5">
             <div className="flex items-center justify-between">
@@ -95,7 +118,7 @@ export function CallScreen() {
                     </button>
                   </>
                 )}
-                {call.phase === "ended" && (
+                {call.phase === "ended" && !sample && (
                   <button onClick={() => call.start(lang)} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">
                     New call
                   </button>
@@ -113,6 +136,7 @@ export function CallScreen() {
             {call.sid && <PhoneCard sid={call.sid} state={call.state} />}
           </div>
         </section>
+        </>
       )}
 
       <HowItChecks />
