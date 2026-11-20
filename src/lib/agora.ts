@@ -1,12 +1,7 @@
 // Starting, stopping and speaking through the Agora Conversational AI agent.
 import { Agent, AgoraClient, Area, CustomLLM, ExpiresIn, MurfTTS, SarvamSTT, generateClientToken, generateConvoAIToken } from "agora-agents";
+import { envValue, requireEnv as env } from "./env";
 import type { Lang } from "./languages";
-
-function env(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing ${name} in the environment`);
-  return v;
-}
 
 // A fresh client per request: a long-lived one ended up sending an expired token
 // ("Token is expired") once the server had been up for about an hour.
@@ -56,7 +51,7 @@ export async function startAgent(opts: {
         key: env("MURF_API_KEY"),
         voiceId: lang.voiceId,
         locale: lang.murfLocale,
-        model: process.env.MURF_MODEL || "FALCON",
+        model: envValue("MURF_MODEL") || "FALCON",
         sampleRate: 24000,
       }),
     );

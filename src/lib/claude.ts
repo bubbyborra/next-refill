@@ -1,16 +1,17 @@
 // The model behind the voice agent: Claude through the Anthropic SDK, streamed, with a
 // manual tool loop so every tool runs in our own code against the official list.
 import Anthropic from "@anthropic-ai/sdk";
+import { envValue } from "./env";
 
-const client = new Anthropic();
+const client = new Anthropic({ apiKey: envValue("ANTHROPIC_API_KEY") });
 
-export const MODEL = process.env.WD_MODEL || "claude-sonnet-5-5";
+export const MODEL = envValue("WD_MODEL") || "claude-sonnet-5-5";
 
 function modelParams(model: string): Record<string, unknown> {
   // A voice call can't wait on hidden reasoning. Haiku 5.5 can turn thinking off (at effort
   // high or below); Sonnet 5.5 turns it off with "between_tools"; Opus 5.5 can't, so it only
   // gets the lowest effort.
-  const effort = process.env.WD_EFFORT || "low";
+  const effort = envValue("WD_EFFORT") || "low";
   if (model.startsWith("claude-haiku-5-5")) return { thinking: { type: "disabled" }, output_config: { effort } };
   if (model.startsWith("claude-sonnet-5-5")) return { thinking: { type: "between_tools" }, output_config: { effort } };
   return { output_config: { effort } };
@@ -141,7 +142,7 @@ export interface StripReading {
 
 export async function readStrip(imageBase64: string, mediaType: "image/jpeg" | "image/png" | "image/webp"): Promise<StripReading> {
   const res = await client.messages.create({
-    model: process.env.WD_VISION_MODEL || MODEL,
+    model: envValue("WD_VISION_MODEL") || MODEL,
     max_tokens: 4000,
     output_config: {
       effort: "low",

@@ -1,6 +1,9 @@
 // Small helpers shared by the API routes.
+import { envValue } from "./env";
+
 export function baseUrl(req: Request): string {
-  if (process.env.PUBLIC_BASE_URL) return process.env.PUBLIC_BASE_URL.replace(/\/$/, "");
+  const configured = envValue("PUBLIC_BASE_URL");
+  if (configured) return configured.replace(/\/$/, "");
   const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
   const proto = req.headers.get("x-forwarded-proto") || "https";
   if (host && !host.startsWith("localhost") && !host.startsWith("127.")) return `${proto}://${host}`;
