@@ -44,13 +44,19 @@ function fakeDevices(label) {
   const original = md.getUserMedia.bind(md);
   md.getUserMedia = async (c) => {
     if (c && c.video) {
+      window.__fakeCam = { asked: true };
       const canvas = document.createElement("canvas");
       canvas.width = 1280;
       canvas.height = 720;
       const g = canvas.getContext("2d");
       const img = new Image();
       img.src = `data:image/jpeg;base64,${label}`;
-      await img.decode();
+      try {
+        await img.decode();
+        window.__fakeCam.decoded = true;
+      } catch (err) {
+        window.__fakeCam.decodeError = String(err);
+      }
       const draw = () => g.drawImage(img, 0, 0, 1280, 720);
       draw();
       setInterval(draw, 200);
@@ -90,7 +96,19 @@ try {
 
   await page.click("text=Show the strip to the camera");
   await page.waitForSelector("video.nr-strip__video", { timeout: 15000 });
-  await until("the camera picture", () => page.$eval("video.nr-strip__video", (v) => v.videoWidth > 0), 15000);
+  try {
+    await until("the camera picture", () => page.$eval("video.nr-strip__video", (v) => v.videoWidth > 0), 15000);
+  } catch (e) {
+    result.video = await page.$eval("video.nr-strip__video", (v) => ({
+      readyState: v.readyState,
+      paused: v.paused,
+      muted: v.muted,
+      tracks: v.srcObject ? v.srcObject.getVideoTracks().map((t) => ({ state: t.readyState, enabled: t.enabled, muted: t.muted, label: t.label })) : null,
+      error: v.error && v.error.message,
+    }));
+    result.fakeCamera = await page.evaluate(() => window.__fakeCam ?? null);
+    throw e;
+  }
   await sleep(800);
   await page.screenshot({ path: path.join(OUT, "1-camera.png") });
   const t0 = Date.now();

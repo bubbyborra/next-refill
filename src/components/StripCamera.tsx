@@ -1,6 +1,6 @@
 "use client";
 // "Show the strip": opens the camera, takes one photo, and sends it to be read.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function StripCamera({ sid, onDone }: { sid: string; onDone: () => void }) {
   const [open, setOpen] = useState(false);
@@ -9,17 +9,21 @@ export function StripCamera({ sid, onDone }: { sid: string; onDone: () => void }
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
 
+  // Attach the camera after React has rendered the video element. Attaching it in an
+  // animation frame raced the render: the frame could run first, and the box stayed black.
+  useEffect(() => {
+    const v = video.current;
+    if (open && v && stream.current && v.srcObject !== stream.current) {
+      v.srcObject = stream.current;
+      void v.play().catch(() => {});
+    }
+  }, [open]);
+
   async function openCam() {
     setMsg(null);
     try {
       stream.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1600 } }, audio: false });
-      setOpen(true);
-      requestAnimationFrame(() => {
-        if (video.current && stream.current) {
-          video.current.srcObject = stream.current;
-          void video.current.play();
-        }
-      });
+      setOpen(true); // the effect below attaches the stream once the video element exists
     } catch {
       setMsg("Camera not available. You can read the composition line aloud instead.");
     }
