@@ -2,6 +2,9 @@
 
 **Same medicine. Jan Aushadhi price.**
 
+![Next Refill: Telma 40 and Glycomet 500 matched to Jan Aushadhi drug codes 300 and 145, saving ₹302 a month](docs/readme-hero.jpg)
+<sub>The list from a sample call: brand prices as the caller said them, Jan Aushadhi prices from the official list.</sub>
+
 Say the medicines you buy every month, in your own language, and Next Refill finds the exact same salt and strength on the government's Jan Aushadhi list, tells you what you'd save, and puts the list for the pharmacist on your phone.
 
 It needs a real-time voice agent because the people it's for know their tablets by brand name and speak Telugu, Tamil, Hindi or Kannada, not the English fine print on the strip: Agora's Conversational AI runs the call and Murf's Falcon voices answer in their language.
@@ -13,6 +16,14 @@ It needs a real-time voice agent because the people it's for know their tablets 
 1. Open the live app, pick your language and press **Start talking** (or type in the box if the room is noisy).
 2. Say a medicine you buy, how many a day and the price on the strip, for example "Telma 40, one a day, 230 rupees for 30" (an illustrative price).
 3. Hear the saving. Say your area, say "yes" when it offers to send the list, and scan the QR code: the list for the pharmacist, directions, refill reminders and a voice note in your language.
+
+## Why it matters
+
+- About 315 million adults in India have high blood pressure and 101 million have diabetes ([ICMR-INDIAB, 2023](https://nmji.in/lessons-learnt-from-the-icmrindiab-study)), and their families buy the same tablets every month.
+- Households still pay 39.4% of India's health spending out of their own pockets ([National Health Accounts 2021-22, PIB](https://pib.gov.in/PressReleasePage.aspx?PRID=2114761)).
+- Jan Aushadhi prices are "generally 50–80% lower than those of comparable branded medicines" ([PIB, March 2026](https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/mar/doc202637814101.pdf)). A nine-state study found out-of-pocket spending 60.6% to 89.3% lower for those who bought only at Kendras, but use stays "limited, mainly due to low awareness, perceived stock shortages and low rates of generic prescribing" ([BMJ Open, 2026](https://doi.org/10.1136/bmjopen-2025-113839)).
+
+Next Refill works on the first of those: it turns the brand name a family knows, said in their own language, into the exact generic and its drug code.
 
 ## What a call does
 
