@@ -143,8 +143,8 @@ export async function readStrip(imageBase64: string, mediaType: "image/jpeg" | "
                 },
               },
             },
-            form: { type: ["string", "null"], enum: ["tablet", "capsule", "syrup", "suspension", "injection", "cream", "gel", "ointment", "drops", "inhaler", "powder", "other", null] },
-            release: { type: ["string", "null"], enum: ["normal", "extended", "delayed", "dispersible", null] },
+            form: { type: "string", enum: ["tablet", "capsule", "syrup", "suspension", "injection", "cream", "gel", "ointment", "drops", "inhaler", "powder", "other", "unknown"] },
+            release: { type: "string", enum: ["normal", "extended", "delayed", "dispersible", "unknown"] },
             mrp_rupees: { type: ["number", "null"] },
             units_per_pack: { type: ["number", "null"] },
             notes: { type: ["string", "null"] },
@@ -160,14 +160,17 @@ export async function readStrip(imageBase64: string, mediaType: "image/jpeg" | "
           {
             type: "text",
             text:
-              "This is a photo of an Indian medicine strip or box. Read only what is printed. Return the brand name, every active ingredient with its strength exactly as printed (the composition line, e.g. 'Each film-coated tablet contains Telmisartan IP 40 mg'), the dosage form, the release type (extended for SR/ER/XR/CR/PR/prolonged release, delayed for gastro-resistant/enteric coated/DR, dispersible for DT/ODT, otherwise normal), the printed MRP in rupees and how many units that MRP covers. Use null for anything you cannot read clearly; never guess. readable=false if the composition is not legible.",
+              "This is a photo of an Indian medicine strip or box. Read only what is printed. Return the brand name, every active ingredient with its strength exactly as printed (the composition line, e.g. 'Each film-coated tablet contains Telmisartan IP 40 mg'), the dosage form, the release type (extended for SR/ER/XR/CR/PR/prolonged release, delayed for gastro-resistant/enteric coated/DR, dispersible for DT/ODT, otherwise normal), the printed MRP in rupees and how many units that MRP covers. Use null (or 'unknown' for form and release) for anything you cannot read clearly; never guess. readable=false if the composition is not legible.",
           },
         ],
       },
     ],
   } as Anthropic.MessageCreateParamsNonStreaming);
   const text = res.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text ?? "{}";
-  return JSON.parse(text) as StripReading;
+  const r = JSON.parse(text) as StripReading;
+  if (r.form === "unknown") r.form = null;
+  if (r.release === "unknown") r.release = null;
+  return r;
 }
 
 // A short voice note of the finished list, in the caller's language, for the phone page.

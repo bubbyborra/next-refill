@@ -5,7 +5,19 @@ import { baseUrl, jsonError, newId } from "@/lib/http";
 import { getState, logActivity, putState, updateState, type CallState } from "@/lib/store";
 import { nearest } from "@/lib/stores";
 
+// A simple cap per visitor, so a public link can't run up the Agora and model bills.
+const starts = new Map<string, number[]>();
+function tooMany(ip: string): boolean {
+  const now = Date.now();
+  const recent = (starts.get(ip) ?? []).filter((t) => now - t < 60 * 60_000);
+  recent.push(now);
+  starts.set(ip, recent);
+  return recent.length > Number(process.env.MAX_CALLS_PER_HOUR || 20);
+}
+
 export async function POST(req: Request) {
+  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
+  if (tooMany(ip)) return jsonError("Too many calls from here in the last hour. Please try again later.", 429);
   const body = (await req.json().catch(() => ({}))) as { lang?: string; lat?: number; lon?: number };
   const lang = getLang(body.lang);
   const sid = newId();
