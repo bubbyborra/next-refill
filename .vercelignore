@@ -1,0 +1,5 @@
+.env*
+!.env.example
+notes/
+data/voice-note-sample-*.mp3
+.next
