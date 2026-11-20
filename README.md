@@ -2,8 +2,8 @@
 
 **Same medicine. Jan Aushadhi price.**
 
-![Next Refill: Telma 40 and Glycomet 500 matched to Jan Aushadhi drug codes 300 and 145, saving ₹302 a month](docs/readme-hero.jpg)
-<sub>The list from a sample call: brand prices as the caller said them, Jan Aushadhi prices from the official list.</sub>
+![A spoken Telugu call on the live site: Telma 40 and Glycomet 500 matched to Jan Aushadhi drug codes 300 and 145, saving ₹302 a month, nearest store found, list sent to the phone](docs/core-loop.gif)
+<sub>A spoken call on the live site, sped up 5×. The caller is a synthetic Telugu voice from our test script (scripts/demo_path.mjs); the agent, the matching and the saving are live. Brand prices are as the caller said them.</sub>
 
 Say the medicines you buy every month, in your own language, and Next Refill finds the exact same salt and strength on the government's Jan Aushadhi list, tells you what you'd save, and puts the list for the pharmacist on your phone.
 
@@ -62,6 +62,7 @@ Limits, in numbers: zero real users; the break test covers matching only, not sp
 - The live app: https://next-refill.vercel.app (a call works without a microphone too: type instead).
 - The data, with sources: [`data/source/`](data/source). Rebuild with `python3 scripts/build_products.py data/source/pmbi-product-mrp-list.tsv` and `python3 scripts/build_stores.py`.
 - All checks: `./check.sh` (types, the 20 medicines, the break test).
+- A spoken call end to end on the live site: `npx playwright install chromium`, then `node scripts/demo_path.mjs https://next-refill.vercel.app te` (or `hi`). A synthetic caller's voice goes in as the microphone, and it checks every step: both medicines matched, the ₹302 saving, the store, the list sent, the phone page, the reminders file and the voice note. Each run is a real call of about two minutes.
 
 ## What doesn't work yet
 
