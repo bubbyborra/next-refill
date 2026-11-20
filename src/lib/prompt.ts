@@ -53,7 +53,7 @@ export function stateNote(s: CallState): string {
     `Medicines on the list:\n${meds}`,
     t.pricedCount ? `Totals for priced medicines: now Rs ${t.monthlyBrand}/month, at Jan Aushadhi Rs ${t.monthlyJa}/month, saving Rs ${t.monthlySaving}/month (Rs ${t.yearlySaving}/year).` : `No saving worked out yet.`,
     s.location ? `Caller location: ${s.location.label} (${s.location.source === "browser" ? "shared by their browser" : "they said it"}).` : `Caller location: unknown.`,
-    s.stores?.length ? `Nearest stores: ${s.stores.map((k) => `${k.name} (${k.km} km)`).join("; ")}.` : ``,
+    s.stores?.length ? `Nearest Jan Aushadhi stores (say the street or area, never a code): ${s.stores.map((k) => `${k.address.split(",").slice(0, 3).join(",").trim()} (about ${k.km} km)`).join("; ")}.` : ``,
     s.sent ? `Already sent to their phone; first refill reminder ${s.sent.reminders[0]?.date}.` : `Not sent to their phone yet.`,
     s.strip && Date.now() - s.strip.at < 5 * 60_000 ? `Strip photo just read: ${s.strip.summary}` : ``,
   ]
