@@ -46,9 +46,12 @@ export function CallScreen({ children, footer }: { children?: ReactNode; footer?
             <span className="nr-brand__name">{PRODUCT.name}</span>
             <span className="nr-brand__tag">{PRODUCT.tagline}</span>
           </a>
-          <a href="#jan-aushadhi" className="nr-top__link">
-            What is Jan Aushadhi?
-          </a>
+          {/* On the start screen the strip below links every section; the call screen hides the strip, so it gets this link */}
+          {showPanel && (
+            <a href="#jan-aushadhi" className="nr-top__link">
+              What is Jan Aushadhi?
+            </a>
+          )}
         </div>
       </header>
       {!showPanel && <SubNav />}
