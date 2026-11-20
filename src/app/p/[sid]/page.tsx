@@ -8,7 +8,7 @@ async function List({ params }: { params: Promise<{ sid: string }> }) {
 
 export default function PhonePage(props: PageProps<"/p/[sid]">) {
   return (
-    <Suspense fallback={<p className="p-6 text-ink-soft">Loading the list…</p>}>
+    <Suspense fallback={<p className="nr-list nr-list__sub">Loading the list…</p>}>
       <List params={props.params} />
     </Suspense>
   );

@@ -1,19 +1,14 @@
 @import "tailwindcss";
 
-@theme {
-  --color-ink: #1d2233;
-  --color-ink-soft: #5d6273;
-  --color-accent: #3346d3;
-  --color-coral: #e2553d;
-  --color-amber: #d97706;
-  --color-cream: #efebf7;
-  --color-paper: #faf9f6;
-  --color-line: #e2e0ea;
-  --font-sans: var(--font-noto), var(--font-te), var(--font-ta), var(--font-hi), var(--font-kn), var(--font-ml), var(--font-bn), var(--font-gu), system-ui, sans-serif;
-}
-
-html,
-body {
-  background: #faf9f6;
-  color: #1d2233;
+/* Tailwind colour and font utilities follow the design tokens (components/design). */
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-3);
+  --color-accent: var(--act-ink);
+  --color-coral: var(--bad);
+  --color-amber: var(--warn);
+  --color-cream: var(--sheet-2);
+  --color-paper: var(--paper);
+  --color-line: var(--rule);
+  --font-sans: var(--font-body);
 }

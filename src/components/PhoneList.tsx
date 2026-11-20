@@ -32,8 +32,8 @@ export function PhoneList({ sid }: { sid: string }) {
     };
   }, [sid]);
 
-  if (missing) return <p className="p-6 text-ink">This list has expired or doesn&apos;t exist.</p>;
-  if (!s) return <p className="p-6 text-ink-soft">Loading the list…</p>;
+  if (missing) return <p className="nr-list nr-list__sub">This list has expired or doesn&apos;t exist.</p>;
+  if (!s) return <p className="nr-list nr-list__sub">Loading the list…</p>;
   const matched = s.meds.filter((m) => m.ja);
   const store = s.stores?.[0];
   const share = [
@@ -46,81 +46,96 @@ export function PhoneList({ sid }: { sid: string }) {
     .join("\n");
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pb-12 pt-5">
-      <p className="text-sm font-semibold text-accent">{PRODUCT.name}</p>
-      {sid === "sample" && <p className="mt-2 rounded-xl bg-cream px-3 py-2 text-xs text-ink">Sample list from a real test call (21 Nov 2026), shown as an illustration.</p>}
-      <h1 className="mt-1 text-2xl font-bold text-ink">Show this to the pharmacist</h1>
-      <p className="mt-1 text-sm text-ink-soft">Same salt, same strength, from the Jan Aushadhi list. Ask your doctor if in doubt.</p>
+    <main className="nr-list">
+      <p className="nr-list__brand">
+        <ListMark />
+        {PRODUCT.name}
+      </p>
+      {sid === "sample" && <p className="nr-list__note">Sample list from a real test call (21 Nov 2026), shown as an illustration.</p>}
+      <h1 className="nr-list__h1">Show this to the pharmacist</h1>
+      <p className="nr-list__sub">Same salt, same strength, from the Jan Aushadhi list. Ask your doctor if in doubt.</p>
 
       {s.totals.pricedCount > 0 && (
-        <div className="mt-5 rounded-2xl bg-accent px-5 py-4 text-white">
-          <p className="text-sm opacity-90">You save every month</p>
-          <p className="text-4xl font-bold">{rupees(s.totals.monthlySaving)}</p>
-          <p className="text-sm opacity-90">{rupees(s.totals.yearlySaving)} a year</p>
+        <div className="nr-total">
+          <p className="nr-total__label">You save every month</p>
+          <p className="nr-total__num">{rupees(s.totals.monthlySaving)}</p>
+          <p className="nr-total__sub">{rupees(s.totals.yearlySaving)} a year</p>
         </div>
       )}
 
-      <ul className="mt-5 space-y-3">
+      <ul className="nr-list__meds">
         {s.meds.map((m) => (
-          <li key={m.id} className="rounded-2xl border border-line bg-white p-4">
-            <p className="text-sm text-ink-soft">Instead of {m.brand}</p>
+          <li key={m.id} className="nr-panel nr-list__med">
+            <p className="nr-list__instead">Instead of {m.brand}</p>
             {m.ja ? (
               <>
-                <p className="mt-1 text-lg font-bold leading-snug text-ink">{m.ja.name}</p>
-                <p className="mt-1 text-sm text-ink">
-                  Drug code <span className="font-mono font-semibold">{m.ja.code}</span>
+                <p className="nr-list__name">{m.ja.name}</p>
+                <p className="nr-list__code">
+                  Drug code <strong>{m.ja.code}</strong>
                   {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
                 </p>
                 {m.monthlySaving !== undefined && (
-                  <p className="mt-1 text-sm text-accent">
+                  <p className="nr-list__save">
                     {rupees(m.monthlyBrand)} → {rupees(m.monthlyJa)} a month
                   </p>
                 )}
               </>
             ) : (
-              <p className="mt-1 text-ink">Not on the Jan Aushadhi list: keep buying {m.brand}.</p>
+              <p className="nr-list__name">Not on the Jan Aushadhi list: keep buying {m.brand}.</p>
             )}
           </li>
         ))}
       </ul>
 
       {store && (
-        <div className="mt-5 rounded-2xl border border-line bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Nearest store · about {store.km} km</p>
-          <p className="mt-1 font-semibold text-ink">{store.name}</p>
-          <p className="text-sm text-ink-soft">{store.address}</p>
-          <a href={store.mapsUrl} className="mt-3 inline-block rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">
+        <div className="nr-panel nr-list__store">
+          <p className="nr-label">Nearest store · about {store.km} km</p>
+          <p className="nr-store__name">{store.name}</p>
+          <p className="nr-store__addr">{store.address}</p>
+          <a href={store.mapsUrl} className="nr-btn nr-btn--small nr-list__dir">
             Directions
           </a>
         </div>
       )}
 
-      <div className="mt-5 grid gap-3">
+      <div className="nr-list__actions">
         {s.meds.length > 0 && sid !== "sample" && <ListenButton sid={sid} label={`Listen in ${getLang(s.lang).native}`} />}
         {s.sent && (
-          <a href={`/api/ics/${sid}`} className="rounded-full border border-ink px-4 py-3 text-center font-semibold text-ink">
+          <a href={`/api/ics/${sid}`} className="nr-btn nr-btn--ghost">
             Add monthly refill reminders (from {s.sent.reminders[0]?.date})
           </a>
         )}
         {matched.length > 0 && (
-          <a href={`https://wa.me/?text=${encodeURIComponent(share)}`} className="rounded-full bg-ink px-4 py-3 text-center font-semibold text-white">
+          <a href={`https://wa.me/?text=${encodeURIComponent(share)}`} className="nr-btn">
             Share on WhatsApp
           </a>
         )}
       </div>
-      <p className="mt-8 text-xs text-ink-soft">
+      <p className="nr-list__foot">
         Prices: PMBI Jan Aushadhi product list. Stores: janaushadhi.gov.in Locate Kendra. Distances are approximate.
       </p>
     </main>
   );
 }
 
+function ListMark() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 40 40" aria-hidden className="nr-mark">
+      <rect x="2" y="9" width="36" height="22" rx="11" className="nr-mark__a" />
+      <rect x="20" y="9" width="18" height="22" rx="0" className="nr-mark__b" />
+      <rect x="20" y="9" width="18" height="22" rx="11" className="nr-mark__b" />
+      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" strokeWidth="2" className="nr-mark__line" />
+      <path d="M20 9v22" strokeWidth="2" className="nr-mark__line" />
+    </svg>
+  );
+}
+
 function ListenButton({ sid, label }: { sid: string; label: string }) {
   const [src, setSrc] = useState<string | null>(null);
   return src ? (
-    <audio src={src} controls autoPlay className="w-full" />
+    <audio src={src} controls autoPlay className="nr-list__audio" />
   ) : (
-    <button onClick={() => setSrc(`/api/voice/${sid}?t=${Date.now()}`)} className="rounded-full bg-accent px-4 py-3 text-center font-semibold text-white">
+    <button onClick={() => setSrc(`/api/voice/${sid}?t=${Date.now()}`)} className="nr-btn nr-btn--listen">
       {label}
     </button>
   );

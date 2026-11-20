@@ -9,149 +9,155 @@ import { SAMPLE_LINES, SAMPLE_STATE } from "@/lib/sample";
 
 const rupees = (n: number | undefined | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
+type View = null | "call" | "ended" | "loading" | "error";
+
 export function CallScreen() {
   const [lang, setLang] = useState("te");
   const real = useCall();
-  // "?state=call" or "?state=ended" shows a labelled sample call (a real test call's data):
-  // a demo without a microphone, and every screen reachable for checks.
-  const [sample, setSample] = useState<null | "call" | "ended">(null);
+  // "?state=call" (or "result") and "?state=ended" show a labelled sample call (a real test
+  // call's data): a demo without a microphone, and every screen reachable for checks.
+  // "?state=loading" and "?state=error" show the start screen while connecting or after a failure.
+  const [view, setView] = useState<View>(null);
   useEffect(() => {
     const v = new URLSearchParams(window.location.search).get("state");
-    if (v === "call" || v === "ended") setSample(v);
+    if (v === "call" || v === "result") setView("call");
+    else if (v === "ended" || v === "loading" || v === "error") setView(v);
   }, []);
+  const sample = view === "call" || view === "ended";
   const call = sample
-    ? { ...real, phase: (sample === "call" ? "live" : "ended") as typeof real.phase, mood: "listening" as const, lines: SAMPLE_LINES, state: SAMPLE_STATE, sid: "sample" }
-    : real;
+    ? { ...real, phase: (view === "call" ? "live" : "ended") as typeof real.phase, mood: "listening" as const, lines: SAMPLE_LINES, state: SAMPLE_STATE, sid: "sample" }
+    : view === "loading"
+      ? { ...real, phase: "starting" as typeof real.phase }
+      : view === "error" && !real.error
+        ? { ...real, phase: "error" as typeof real.phase, error: "Couldn't start the call" }
+        : real;
   const live = call.phase === "live" && !sample;
   const showPanel = call.phase !== "idle" && call.phase !== "starting" && call.phase !== "error";
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Mark />
-          <div>
-            <p className="text-lg font-bold tracking-tight text-ink">{PRODUCT.name}</p>
-            <p className="text-sm text-ink-soft">{PRODUCT.tagline}</p>
-          </div>
+    <div className="nr-app">
+      <header className="nr-top">
+        <div className="nr-top__inner">
+          <a href="/" className="nr-brand">
+            <Mark />
+            <span className="nr-brand__name">{PRODUCT.name}</span>
+            <span className="nr-brand__tag">{PRODUCT.tagline}</span>
+          </a>
+          <a href="#how" className="nr-top__link">
+            How it checks
+          </a>
         </div>
-        <a href="#how" className="hidden text-sm text-ink-soft underline-offset-4 hover:underline sm:block">
-          How it checks
-        </a>
       </header>
 
-      {!showPanel && (
-        <section className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-          <div>
-            <h1 className="text-4xl font-bold leading-tight tracking-tight text-ink sm:text-5xl">
-              Say your medicines.
-              <br />
-              <span className="text-accent">Hear what you'd save.</span>
-            </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
-              Tell it, in your own language, which tablets you buy every month. It finds the same salt and strength in the
-              government&apos;s Jan Aushadhi list, works out the monthly saving, finds the nearest Jan Aushadhi store and puts
-              it all on your phone.
-            </p>
-            <div className="mt-7">
-              <p className="mb-2 text-sm font-medium text-ink-soft">Talk in</p>
-              <div className="flex flex-wrap gap-2">
-                {LANGS.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => setLang(l.code)}
-                    className={`rounded-full border px-4 py-2 text-base transition ${
-                      lang === l.code ? "border-accent bg-accent text-white" : "border-line bg-paper text-ink hover:border-accent"
-                    }`}
-                  >
-                    {l.native}
+      <main className="nr-main">
+        {!showPanel && (
+          <section className="nr-hero">
+            <div className="nr-hero__copy">
+              <h1 className="nr-h1">
+                Say your medicines.
+                <br />
+                Hear what you&apos;d save.
+              </h1>
+              <p className="nr-lead">
+                Tell it, in your own language, which tablets you buy every month. It finds the same salt and strength in the
+                government&apos;s Jan Aushadhi list, works out the monthly saving, finds the nearest Jan Aushadhi store and puts
+                it all on your phone.
+              </p>
+              <div className="nr-start">
+                <div className="nr-langs">
+                  <p className="nr-langs__label">Talk in</p>
+                  <div className="nr-chips">
+                    {LANGS.map((l) => (
+                      <button key={l.code} onClick={() => setLang(l.code)} className="nr-chip" aria-pressed={lang === l.code} lang={l.code}>
+                        {l.native}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="nr-actions">
+                  <button onClick={() => call.start(lang)} disabled={call.phase === "starting"} className="nr-btn nr-btn--go">
+                    <MicIcon />
+                    {call.phase === "starting" ? "Connecting…" : "Start talking"}
                   </button>
-                ))}
+                  <a href="?state=call" className="nr-samplelink">
+                    No microphone? See a sample call
+                  </a>
+                  <p className="nr-fine">Uses your microphone. No sign-up.</p>
+                </div>
               </div>
+              {call.error && (
+                <p className="nr-alert" role="alert">
+                  {call.error}
+                </p>
+              )}
             </div>
-            <div className="mt-7 flex flex-wrap items-center gap-4">
-              <button
-                onClick={() => call.start(lang)}
-                disabled={call.phase === "starting"}
-                className="flex items-center gap-3 rounded-full bg-ink px-7 py-4 text-lg font-semibold text-white shadow-lg shadow-ink/20 transition hover:bg-accent disabled:opacity-60"
-              >
-                <MicIcon />
-                {call.phase === "starting" ? "Connecting…" : "Start talking"}
-              </button>
-              <p className="text-sm text-ink-soft">Uses your microphone. No sign-up.</p>
+            <div className="nr-hero__stage">
+              <SampleBill />
             </div>
-            <a href="?state=call" className="mt-4 inline-block text-sm font-semibold text-accent underline-offset-4 hover:underline">
-              No microphone? See a sample call
-            </a>
-            {call.error && (
-              <p className="mt-4 rounded-lg bg-coral/10 px-4 py-3 text-sm text-coral" role="alert">
-                {call.error}
+          </section>
+        )}
+
+        {showPanel && (
+          <>
+            {sample && (
+              <p className="nr-banner" role="status">
+                <span className="nr-banner__tag">Sample call</span>: an illustration built from a real test call on 21 Nov 2026 (typed in Telugu). Prices are as the caller said them; Jan Aushadhi prices are from the official list.{" "}
+                <a href="/" className="nr-banner__link">
+                  Start your own call
+                </a>
               </p>
             )}
-          </div>
-          <SampleBill />
-        </section>
-      )}
-
-      {showPanel && (
-        <>
-        {sample && (
-          <p className="mt-6 rounded-2xl bg-cream px-4 py-3 text-sm text-ink">
-            <span className="font-semibold">Sample call</span>: an illustration built from a real test call on 21 Nov 2026 (typed in Telugu). Prices are as the caller said them; Jan Aushadhi prices are from the official list.{" "}
-            <a href="/" className="font-semibold text-accent underline-offset-4 hover:underline">
-              Start your own call
-            </a>
-          </p>
-        )}
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-          <div className="flex flex-col rounded-3xl border border-line bg-paper p-5">
-            <div className="flex items-center justify-between">
-              <MoodPill mood={live ? call.mood : "idle"} ended={call.phase === "ended"} />
-              <div className="flex gap-2">
-                {live && (
-                  <>
-                    <button onClick={call.toggleMute} className="rounded-full border border-line px-4 py-2 text-sm hover:border-ink">
-                      {call.muted ? "Unmute" : "Mute"}
-                    </button>
-                    <button onClick={call.stop} className="rounded-full bg-coral px-4 py-2 text-sm font-semibold text-white">
-                      End call
-                    </button>
-                  </>
-                )}
-                {call.phase === "ended" && !sample && (
-                  <button onClick={() => call.start(lang)} className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white">
-                    New call
-                  </button>
-                )}
+            <section className="nr-call">
+              <div className="nr-panel nr-convo">
+                <WindowBar />
+                <div className="nr-convo__head">
+                  <MoodPill mood={live ? call.mood : "idle"} ended={call.phase === "ended"} />
+                  <div className="nr-convo__ctrls">
+                    {live && (
+                      <>
+                        <button onClick={call.toggleMute} className="nr-btn nr-btn--small nr-btn--ghost">
+                          {call.muted ? "Unmute" : "Mute"}
+                        </button>
+                        <button onClick={call.stop} className="nr-btn nr-btn--small nr-btn--stop">
+                          End call
+                        </button>
+                      </>
+                    )}
+                    {call.phase === "ended" && !sample && (
+                      <button onClick={() => call.start(lang)} className="nr-btn nr-btn--small">
+                        New call
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <Transcript lines={call.lines} lang={call.state?.lang} />
+                {live && <TypeBox onSend={call.typeLine} prominent={call.noMic} />}
+                {live && call.sid && <StripCamera sid={call.sid} onDone={() => call.refresh(call.sid!)} />}
+                <Activity state={call.state} />
               </div>
-            </div>
-            <Transcript lines={call.lines} />
-            {live && <TypeBox onSend={call.typeLine} prominent={call.noMic} />}
-            {live && call.sid && <StripCamera sid={call.sid} onDone={() => call.refresh(call.sid!)} />}
-            <Activity state={call.state} />
-          </div>
-          <div className="flex flex-col gap-6">
-            <Bill state={call.state} />
-            <StoreCard state={call.state} />
-            {call.sid && <PhoneCard sid={call.sid} state={call.state} />}
-          </div>
-        </section>
-        </>
-      )}
+              <div className="nr-side">
+                <Bill state={call.state} />
+                <StoreCard state={call.state} />
+                {call.sid && <PhoneCard sid={call.sid} state={call.state} />}
+              </div>
+            </section>
+          </>
+        )}
 
-      <HowItChecks />
-    </main>
+        <HowItChecks />
+      </main>
+    </div>
   );
 }
 
 function Mark() {
   return (
-    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="shrink-0">
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="#3346d3" />
-      <rect x="20" y="9" width="18" height="22" rx="0" fill="#efebf7" />
-      <rect x="20" y="9" width="18" height="22" rx="11" fill="#efebf7" />
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" stroke="#1d2233" strokeWidth="2" />
-      <path d="M20 9v22" stroke="#1d2233" strokeWidth="2" />
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="nr-mark">
+      <rect x="2" y="9" width="36" height="22" rx="11" className="nr-mark__a" />
+      <rect x="20" y="9" width="18" height="22" rx="0" className="nr-mark__b" />
+      <rect x="20" y="9" width="18" height="22" rx="11" className="nr-mark__b" />
+      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" strokeWidth="2" className="nr-mark__line" />
+      <path d="M20 9v22" strokeWidth="2" className="nr-mark__line" />
     </svg>
   );
 }
@@ -165,32 +171,42 @@ function MicIcon() {
   );
 }
 
+// Era-style window chrome: a thin bar with three small dots.
+function WindowBar() {
+  return (
+    <div className="nr-winbar" aria-hidden>
+      <span className="nr-winbar__dots">
+        <i />
+        <i />
+        <i />
+      </span>
+    </div>
+  );
+}
+
 function MoodPill({ mood, ended }: { mood: string; ended: boolean }) {
   const label = ended ? "Call ended" : mood === "speaking" ? "Speaking" : mood === "thinking" ? "Checking" : mood === "listening" ? "Listening" : "Connected";
+  const state = ended ? "ended" : mood === "speaking" ? "speaking" : mood === "thinking" ? "thinking" : "on";
   return (
-    <span className="flex items-center gap-2 rounded-full bg-cream px-3 py-1.5 text-sm font-medium text-ink">
-      <span className={`h-2.5 w-2.5 rounded-full ${ended ? "bg-ink-soft" : mood === "speaking" ? "animate-pulse bg-accent" : mood === "thinking" ? "animate-pulse bg-amber" : "bg-accent"}`} />
+    <span className="nr-mood" data-state={state}>
+      <span className="nr-mood__dot" />
       {label}
     </span>
   );
 }
 
-function Transcript({ lines }: { lines: ReturnType<typeof useCall>["lines"] }) {
+function Transcript({ lines, lang }: { lines: ReturnType<typeof useCall>["lines"]; lang?: string }) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // newer browsers return a promise from scrollIntoView; an effect must return nothing
     void end.current?.scrollIntoView({ block: "nearest" });
   }, [lines]);
   return (
-    <div className="mt-4 h-80 overflow-y-auto pr-1" aria-live="polite">
-      {lines.length === 0 && <p className="text-ink-soft">Say hello. The agent speaks first, then listens.</p>}
+    <div className="nr-transcript" aria-live="polite">
+      {lines.length === 0 && <p className="nr-transcript__empty">Say hello. The agent speaks first, then listens.</p>}
       {lines.map((l) => (
-        <div key={l.key} className={`mb-3 flex ${l.who === "you" ? "justify-end" : "justify-start"}`}>
-          <p
-            className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[17px] leading-snug ${
-              l.who === "you" ? "rounded-br-sm bg-ink text-white" : "rounded-bl-sm bg-cream text-ink"
-            } ${l.final ? "" : "opacity-70"}`}
-          >
+        <div key={l.key} className="nr-line" data-who={l.who}>
+          <p className="nr-bubble" data-final={l.final ? "yes" : "no"} lang={lang}>
             {l.text}
           </p>
         </div>
@@ -205,7 +221,8 @@ function TypeBox({ onSend, prominent }: { onSend: (t: string) => Promise<void>; 
   const [busy, setBusy] = useState(false);
   return (
     <form
-      className="mt-3 flex gap-2"
+      className="nr-type"
+      data-prominent={prominent ? "yes" : "no"}
       onSubmit={async (e) => {
         e.preventDefault();
         if (!text.trim() || busy) return;
@@ -220,9 +237,9 @@ function TypeBox({ onSend, prominent }: { onSend: (t: string) => Promise<void>; 
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={prominent ? "No microphone? Type here, e.g. Telma 40, one a day, 230 for 30" : "Too noisy? Type instead"}
-        className={`min-w-0 flex-1 rounded-full border bg-white px-4 py-2.5 text-[15px] outline-none focus:border-accent ${prominent ? "border-accent" : "border-line"}`}
+        className="nr-input"
       />
-      <button disabled={busy || !text.trim()} className="rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40">
+      <button disabled={busy || !text.trim()} className="nr-btn nr-btn--small">
         {busy ? "…" : "Send"}
       </button>
     </form>
@@ -232,14 +249,11 @@ function TypeBox({ onSend, prominent }: { onSend: (t: string) => Promise<void>; 
 function Activity({ state }: { state: PublicState | null }) {
   if (!state?.activity.length) return null;
   return (
-    <div className="mt-4 border-t border-line pt-4">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-soft">What it just did</p>
-      <ol className="space-y-1.5 text-sm text-ink">
+    <div className="nr-activity">
+      <p className="nr-label">What it just did</p>
+      <ol className="nr-activity__list">
         {state.activity.slice(-6).map((a) => (
-          <li key={a.t + a.text} className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-            {a.text}
-          </li>
+          <li key={a.t + a.text}>{a.text}</li>
         ))}
       </ol>
     </div>
@@ -250,50 +264,51 @@ function Bill({ state }: { state: PublicState | null }) {
   const meds = state?.meds ?? [];
   const t = state?.totals;
   return (
-    <div className="rounded-3xl border border-line bg-white p-5 shadow-sm">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-lg font-bold text-ink">Your medicines</h2>
-        <span className="text-xs text-ink-soft">per month</span>
+    <div className="nr-panel nr-bill">
+      <WindowBar />
+      <div className="nr-bill__head">
+        <h2 className="nr-h2">Your medicines</h2>
+        <span className="nr-small">per month</span>
       </div>
-      {meds.length === 0 && <p className="mt-4 text-ink-soft">Medicines you mention appear here, checked against the government list.</p>}
-      <ul className="mt-3 divide-y divide-line">
+      {meds.length === 0 && <p className="nr-bill__empty">Medicines you mention appear here, checked against the government list.</p>}
+      <ul className="nr-meds">
         {meds.map((m) => (
-          <li key={m.id} className="py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-ink">
-                  {m.brand}
-                  <span className="ml-2 text-sm font-normal text-ink-soft">{m.dosesPerDay} a day</span>
+          <li key={m.id} className="nr-med">
+            <div className="nr-med__info">
+              <p className="nr-med__brand">
+                {m.brand}
+                <span className="nr-med__dose">{m.dosesPerDay} a day</span>
+              </p>
+              <p className="nr-med__comp">{m.composition}</p>
+              {m.ja ? (
+                <p className="nr-med__ja">
+                  Jan Aushadhi: {m.ja.name} · <span className="nr-code">code {m.ja.code}</span>
+                  {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
                 </p>
-                <p className="text-sm text-ink-soft">{m.composition}</p>
-                {m.ja ? (
-                  <p className="mt-1 text-sm text-accent">
-                    Jan Aushadhi: {m.ja.name} · code {m.ja.code}
-                    {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-sm text-coral">Not on the Jan Aushadhi list. Keep your current medicine.</p>
-                )}
-              </div>
-              <div className="text-right">
-                {m.monthlySaving !== undefined ? (
-                  <>
-                    <p className="text-sm text-ink-soft line-through">{rupees(m.monthlyBrand)}</p>
-                    <p className="text-lg font-bold text-ink">{rupees(m.monthlyJa)}</p>
-                  </>
-                ) : m.ja ? (
-                  <p className="text-sm text-ink-soft">{m.monthlyJa !== undefined ? rupees(m.monthlyJa) : "price?"}</p>
-                ) : null}
-              </div>
+              ) : (
+                <p className="nr-med__miss">Not on the Jan Aushadhi list. Keep your current medicine.</p>
+              )}
+            </div>
+            <div className="nr-med__prices">
+              {m.monthlySaving !== undefined ? (
+                <>
+                  <p className="nr-med__was">{rupees(m.monthlyBrand)}</p>
+                  <p className="nr-med__now">{rupees(m.monthlyJa)}</p>
+                </>
+              ) : m.ja ? (
+                <p className="nr-med__was">{m.monthlyJa !== undefined ? rupees(m.monthlyJa) : "price?"}</p>
+              ) : null}
             </div>
           </li>
         ))}
       </ul>
       {t && t.pricedCount > 0 && (
-        <div className="mt-2 rounded-2xl bg-accent px-5 py-4 text-white">
-          <p className="text-sm opacity-90">You save every month</p>
-          <p className="text-4xl font-bold tracking-tight">{rupees(t.monthlySaving)}</p>
-          <p className="text-sm opacity-90">
+        <div className="nr-total" data-reveal-total>
+          <p className="nr-total__label">You save every month</p>
+          <p className="nr-total__num">
+            <CountUp value={t.monthlySaving} />
+          </p>
+          <p className="nr-total__sub">
             {rupees(t.yearlySaving)} a year · {rupees(t.monthlyBrand)} now → {rupees(t.monthlyJa)} at Jan Aushadhi
           </p>
         </div>
@@ -302,17 +317,57 @@ function Bill({ state }: { state: PublicState | null }) {
   );
 }
 
+type DesignRuntime = { reduce?: boolean; record?: boolean; onReplay?: (fn: () => void) => void };
+
+// The saving total counts up to its new value when the result lands. Reduced motion shows the
+// number at once; record mode (?record=1) slows it down; R replays it during a demo.
+function CountUp({ value }: { value: number }) {
+  const [shown, setShown] = useState(() =>
+    typeof window !== "undefined" && !(window as unknown as { design?: DesignRuntime }).design?.reduce ? 0 : value,
+  );
+  const from = useRef(0);
+  const [run, setRun] = useState(0);
+  useEffect(() => {
+    const d = (window as unknown as { design?: DesignRuntime }).design;
+    d?.onReplay?.(() => {
+      from.current = 0;
+      setRun((n) => n + 1);
+    });
+  }, []);
+  useEffect(() => {
+    const d = (window as unknown as { design?: DesignRuntime }).design;
+    const start = from.current;
+    from.current = value;
+    if (d?.reduce || start === value) {
+      setShown(value);
+      return;
+    }
+    const ms = 900 * (d?.record ? 1.5 : 1);
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setShown(start + (value - start) * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, run]);
+  return <>{rupees(shown)}</>;
+}
+
 function StoreCard({ state }: { state: PublicState | null }) {
   const s = state?.stores?.[0];
   if (!s) return null;
   return (
-    <div className="rounded-3xl border border-line bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-ink-soft">Nearest Jan Aushadhi store</p>
-      <p className="mt-1 font-semibold text-ink">{s.name}</p>
-      <p className="text-sm text-ink-soft">{s.address}</p>
-      <div className="mt-3 flex items-center gap-3">
-        <span className="rounded-full bg-cream px-3 py-1 text-sm text-ink">about {s.km} km</span>
-        <a href={s.mapsUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">
+    <div className="nr-panel nr-store">
+      <p className="nr-label">Nearest Jan Aushadhi store</p>
+      <p className="nr-store__name">{s.name}</p>
+      <p className="nr-store__addr">{s.address}</p>
+      <div className="nr-store__row">
+        <span className="nr-tag">about {s.km} km</span>
+        <a href={s.mapsUrl} target="_blank" rel="noreferrer" className="nr-link">
           Directions
         </a>
       </div>
@@ -324,20 +379,20 @@ function PhoneCard({ sid, state }: { sid: string; state: PublicState | null }) {
   const [qr, setQr] = useState<string | null>(null);
   const url = useMemo(() => (typeof window === "undefined" ? "" : `${window.location.origin}/p/${sid}`), [sid]);
   useEffect(() => {
-    if (url) QRCode.toDataURL(url, { margin: 1, width: 220, color: { dark: "#1d2233", light: "#ffffff" } }).then(setQr);
+    if (url) QRCode.toDataURL(url, { margin: 1, width: 220, color: { dark: "#101010", light: "#ffffff" } }).then(setQr);
   }, [url]);
   const sent = Boolean(state?.sent);
   return (
-    <div className={`flex items-center gap-5 rounded-3xl border p-5 ${sent ? "border-accent bg-accent/5" : "border-line bg-white"}`}>
-      {qr && <img src={qr} alt="QR code for this list on your phone" className="h-28 w-28 rounded-lg" />}
+    <div className="nr-panel nr-phonecard" data-sent={sent ? "yes" : "no"}>
+      {qr && <img src={qr} alt="QR code for this list on your phone" className="nr-phonecard__qr" />}
       <div>
-        <p className="font-semibold text-ink">{sent ? "Sent to your phone" : "On your phone"}</p>
-        <p className="mt-1 text-sm text-ink-soft">
+        <p className="nr-phonecard__title">{sent ? "Sent to your phone" : "On your phone"}</p>
+        <p className="nr-phonecard__text">
           {sent
             ? `Scan to open the list for the pharmacist, directions, and refill reminders from ${state?.sent?.reminders[0]?.date ?? ""}.`
             : "Scan to follow along. Say yes when it offers to send the list, and the reminders appear here."}
         </p>
-        <a href={`/p/${sid}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-accent">
+        <a href={`/p/${sid}`} target="_blank" rel="noreferrer" className="nr-link">
           Open the list
         </a>
       </div>
@@ -345,25 +400,40 @@ function PhoneCard({ sid, state }: { sid: string; state: PublicState | null }) {
   );
 }
 
+const SAMPLE_ROWS = [
+  { brand: "Telma 40", comp: "Telmisartan 40 mg", dose: "1 a day" },
+  { brand: "Glycomet 500", comp: "Metformin 500 mg", dose: "2 a day" },
+];
+
 function SampleBill() {
   return (
-    <figure className="rotate-1 rounded-3xl border border-line bg-white p-6 shadow-xl shadow-ink/10">
-      <figcaption className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-soft">Illustration of a finished list</figcaption>
-      {[
-        ["Telma 40", "Telmisartan 40 mg", "1 a day"],
-        ["Glycomet 500", "Metformin 500 mg", "2 a day"],
-      ].map(([b, c, d]) => (
-        <div key={b} className="border-b border-line py-3">
-          <p className="font-semibold text-ink">
-            {b} <span className="text-sm font-normal text-ink-soft">{d}</span>
-          </p>
-          <p className="text-sm text-ink-soft">{c} · same salt, same strength</p>
+    <figure className="nr-sample" aria-labelledby="sample-cap">
+      <WindowBar />
+      <div className="nr-sample__head">
+        <span className="nr-sample__app">
+          <Mark />
+          {PRODUCT.name}
+        </span>
+        <p className="nr-sample__cap" id="sample-cap">
+          Illustration of a finished list
+        </p>
+      </div>
+      <div className="nr-sample__card">
+        <div className="nr-sample__rows">
+          {SAMPLE_ROWS.map((r) => (
+            <div key={r.brand} className="nr-sample__row">
+              <p className="nr-sample__brand">
+                {r.brand} <span className="nr-sample__dose">{r.dose}</span>
+              </p>
+              <p className="nr-sample__comp">{r.comp} · same salt, same strength</p>
+            </div>
+          ))}
         </div>
-      ))}
-      <div className="mt-4 rounded-2xl bg-cream px-4 py-3">
-        <p className="text-sm text-ink-soft">The call works out</p>
-        <p className="text-2xl font-bold text-ink">your monthly saving</p>
-        <p className="text-sm text-ink-soft">from your strip&apos;s price and the government&apos;s list</p>
+        <div className="nr-sample__total">
+          <p className="nr-sample__small">The call works out</p>
+          <p className="nr-sample__big">your monthly saving</p>
+          <p className="nr-sample__small">from your strip&apos;s price and the government&apos;s list</p>
+        </div>
       </div>
     </figure>
   );
@@ -371,27 +441,30 @@ function SampleBill() {
 
 function HowItChecks() {
   return (
-    <section id="how" className="mt-16 grid gap-6 border-t border-line pt-10 sm:grid-cols-3">
-      <div>
-        <p className="font-semibold text-ink">Same medicine only</p>
-        <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-          A match needs the same ingredients, strength, form and release type (SR, gastro-resistant…) as your strip. It never
-          suggests a different medicine, strength or dose.
-        </p>
-      </div>
-      <div>
-        <p className="font-semibold text-ink">Government data</p>
-        <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-          Prices come from PMBI&apos;s Jan Aushadhi product list, and stores from its Locate Kendra list (528 stores in
-          Bengaluru Urban).
-        </p>
-      </div>
-      <div>
-        <p className="font-semibold text-ink">Not medical advice</p>
-        <p className="mt-1 text-sm leading-relaxed text-ink-soft">
-          Show the list to your pharmacist, and ask your doctor if you have any doubt. It doesn&apos;t sell medicines or keep
-          your phone number.
-        </p>
+    <section id="how" className="nr-how">
+      <p className="nr-how__label">How it checks</p>
+      <div className="nr-how__cols">
+        <div className="nr-how__col">
+          <h3 className="nr-how__title">Same medicine only</h3>
+          <p className="nr-how__text">
+            A match needs the same ingredients, strength, form and release type (SR, gastro-resistant…) as your strip. It never
+            suggests a different medicine, strength or dose.
+          </p>
+        </div>
+        <div className="nr-how__col">
+          <h3 className="nr-how__title">Government data</h3>
+          <p className="nr-how__text">
+            Prices come from PMBI&apos;s Jan Aushadhi product list, and stores from its Locate Kendra list (528 stores in
+            Bengaluru Urban).
+          </p>
+        </div>
+        <div className="nr-how__col">
+          <h3 className="nr-how__title">Not medical advice</h3>
+          <p className="nr-how__text">
+            Show the list to your pharmacist, and ask your doctor if you have any doubt. It doesn&apos;t sell medicines or keep
+            your phone number.
+          </p>
+        </div>
       </div>
     </section>
   );

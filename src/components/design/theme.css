@@ -1,0 +1,136 @@
+/*
+  theme.css: the picked direction, built on Era's design system (era.app):
+  warm grey page, Instrument Sans (the free match for Saans), square product windows with a
+  soft long shadow, a lilac highlight card, a dark 6px button, and a photo banner across the top.
+  Tokens first, then the structure that differs from app.css.
+*/
+:root {
+  --paper: #eeebe8;
+  --sheet: #fffdfb;
+  --sheet-2: #eeebe8;
+  --ink: #282327;
+  --ink-2: #676166;
+  --ink-3: #676166;
+  --rule: #d4d0cb;
+  --rule-strong: #8c8681;
+  --act: #6239ba;
+  --on-act: #ffffff;
+  --act-ink: #6239ba;
+  --focus: #6239ba;
+  --mark: #c9b8fb;
+  --on-mark: #282327;
+  --hl: #c9b8fb;
+  --on-hl: #282327;
+  --bad: #282327;
+  --bad-bg: #fecca1;
+  --warn: #6239ba;
+  --banner-bg: #eeebe8;
+  --banner-fg: #282327;
+  --btn-bg: #282327;
+  --btn-fg: #f7f5f2;
+  --btn-border: #282327;
+  --btn-radius: 6px;
+  --btn-weight: 550;
+  --ghost-bg: #ffffff;
+  --ghost-fg: #191a17;
+  --ghost-border: #191a17;
+  --h-control: 40px;
+  --pad-control: 16px;
+  --r-control: 6px;
+  --r-card: 0px;
+  --r-window: 0px;
+  --card-edge: #d4d0cb;
+  --shadow-card: none;
+  --shadow-window: 0 28px 65px -18px rgb(42 16 53 / 0.19);
+  --font-display: var(--font-ref), var(--indic), system-ui, sans-serif;
+  --font-heading: var(--font-display);
+  --font-ui: var(--font-display);
+  --font-body: var(--font-display);
+  --weight-display: 500;
+  --weight-heading: 500;
+  --track-display: -0.035em;
+  --track-heading: -0.025em;
+  --lh-display: 1.02;
+  --fs-display: clamp(44px, calc(44px + 36 * ((100vw - 375px) / 1065)), 80px);
+  --fs-lead: clamp(18px, calc(18px + 4 * ((100vw - 375px) / 1065)), 22px);
+  --fs-total: clamp(72px, calc(72px + 32 * ((100vw - 375px) / 1065)), 104px);
+  --weight-num: 500;
+  --total-bg: #c9b8fb;
+  --total-fg: #282327;
+  --total-radius: 0px;
+  --you-bg: #282327;
+  --you-fg: #f7f5f2;
+  --agent-bg: #eeebe8;
+  --agent-fg: #282327;
+  --bubble-radius: 6px;
+  --chip-bg: #fffdfb;
+  --chip-fg: #282327;
+  --chip-bd: #d4d0cb;
+  --chip-on-bg: #282327;
+  --chip-on-fg: #f7f5f2;
+  --chip-radius: 6px;
+  --panel-bg: #fffdfb;
+  --panel-bd: #d4d0cb;
+  --panel-radius: 0px;
+  --panel-shadow: none;
+  --page-max: 1320px;
+  --logo-a: #c9b8fb;
+  --logo-b: #fffdfb;
+  --logo-line: #282327;
+}
+
+:root {
+  .nr-app { background: #f7f5f2; }
+  /* Photo banner with the name over it, like Era's top strip */
+  .nr-top { position: relative; height: clamp(180px, 18vw, 260px); background: #111014 url(/images/strips-banner.webp) center 40% / cover no-repeat; }
+  .nr-top::before { content: ""; position: absolute; inset: 0; background: rgb(17 16 20 / 0.45); }
+  .nr-top__inner { position: absolute; inset: auto 0 0 0; align-items: flex-end; padding-bottom: 20px; min-height: 0; }
+  .nr-brand { align-items: baseline; gap: 0 32px; flex-wrap: wrap; color: #ffffff; }
+  .nr-brand .nr-mark { display: none; }
+  .nr-brand__name { font-size: clamp(30px, calc(30px + 14 * ((100vw - 375px) / 1065)), 44px); font-weight: 600; letter-spacing: -0.045em; color: #ffffff; line-height: 1.1; }
+  .nr-brand__tag { font-size: clamp(19px, calc(19px + 25 * ((100vw - 375px) / 1065)), 44px); font-weight: 300; letter-spacing: -0.035em; color: #ffffff; line-height: 1.15; }
+  /* On the call screen the banner slims down so the call and the saving stay in view */
+  .nr-app:has(.nr-call) .nr-top { height: clamp(120px, 11vw, 156px); background-position: center 30%; }
+  .nr-app:has(.nr-call) .nr-brand__name { font-size: clamp(26px, calc(26px + 10 * ((100vw - 375px) / 1065)), 36px); }
+  .nr-app:has(.nr-call) .nr-brand__tag { font-size: clamp(17px, calc(17px + 15 * ((100vw - 375px) / 1065)), 32px); }
+  .nr-top__link { display: inline-flex; align-items: center; min-height: 38px; padding: 0 12px; border: 1px solid #ffffff; border-radius: 6px; color: #ffffff; background: rgb(17 16 20 / 0.25); font-size: 14px; }
+
+  /* Split hero: words left, the product window right */
+  .nr-hero { grid-template-columns: minmax(0, 760fr) minmax(0, 520fr); gap: clamp(32px, 4vw, 56px); align-items: start; padding-block: 40px 64px; }
+  .nr-hero__copy { gap: 24px; }
+  .nr-lead { max-width: 32em; }
+  .nr-chip { padding: 0 12px; }
+  .nr-actions { gap: 12px 28px; }
+  body:has(.nr-list) { background: #f7f5f2; }
+  .nr-samplelink { color: var(--ink); font-weight: 400; text-decoration: underline; text-decoration-color: var(--rule-strong); }
+  .nr-fine { font-size: 13px; }
+
+  /* The product window */
+  .nr-sample { border: 0; box-shadow: var(--shadow-window); }
+  .nr-winbar { display: flex; align-items: center; height: 26px; padding: 0 10px; background: #eeebe8; border-bottom: 1px solid #d4d0cb; }
+  .nr-winbar__dots { display: flex; gap: 3px; }
+  .nr-winbar__dots i { width: 4px; height: 4px; border-radius: 50%; background: #676166; }
+  .nr-sample__head { justify-content: flex-start; gap: 14px; padding: 14px 14px; border-bottom: 1px solid #d4d0cb; }
+  .nr-sample__app { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 600; letter-spacing: -0.04em; color: var(--ink); }
+  .nr-sample__app .nr-mark { width: 26px; height: 26px; }
+  .nr-sample__cap { font-size: 13px; color: var(--ink); }
+  .nr-sample__card { padding: 8px 20px 20px; }
+  .nr-sample__row { padding-block: 14px; }
+  .nr-sample__total { margin-top: 20px; border-radius: 0; padding: 18px 20px; outline: 8px solid #eeebe8; }
+  .nr-sample__big { font-size: 22px; letter-spacing: -0.03em; }
+
+  /* Call screen: product windows with Era's chrome */
+  .nr-banner { border-radius: 0; border-left: 4px solid #c9b8fb; }
+  .nr-convo, .nr-bill { border: 0; box-shadow: var(--shadow-window); padding-top: 0; }
+  .nr-convo > .nr-winbar, .nr-bill > .nr-winbar { margin: 0 calc(-1 * var(--s-5)) var(--s-4); }
+  .nr-mood { border-radius: 2px; }
+  .nr-tag { border-radius: 2px; }
+  .nr-total { outline: 8px solid #eeebe8; margin: 20px 8px 8px; }
+  .nr-how { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 0 38px; margin-top: 64px; padding-top: 64px; }
+  .nr-how__label { align-self: start; margin: 0; padding: 2px 8px; background: #c9b8fb; color: var(--ink); font-size: 13px; font-weight: 500; }
+  @media (max-width: 960px) {
+    .nr-hero { grid-template-columns: 1fr; gap: 32px; padding-block: 28px 48px; }
+    .nr-how { grid-template-columns: 1fr; gap: 20px; }
+    .nr-how__label { justify-self: start; }
+  }
+}

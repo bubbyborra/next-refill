@@ -55,27 +55,27 @@ export function StripCamera({ sid, onDone }: { sid: string; onDone: () => void }
   }
 
   return (
-    <div className="mt-4">
+    <div className="nr-strip">
       {!open && (
-        <button onClick={openCam} disabled={busy} className="rounded-full border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-white disabled:opacity-50">
+        <button onClick={openCam} disabled={busy} className="nr-btn nr-btn--small nr-btn--ghost">
           {busy ? "Reading the strip…" : "Show the strip to the camera"}
         </button>
       )}
       {open && (
-        <div className="rounded-2xl bg-ink p-3">
-          <video ref={video} playsInline muted className="aspect-video w-full rounded-xl object-cover" />
-          <div className="mt-3 flex gap-2">
-            <button onClick={snap} className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-ink">
+        <div className="nr-strip__cam">
+          <video ref={video} playsInline muted className="nr-strip__video" />
+          <div className="nr-strip__btns">
+            <button onClick={snap} className="nr-btn nr-btn--small nr-btn--light">
               Take photo
             </button>
-            <button onClick={closeCam} className="rounded-full px-4 py-2 text-sm text-white">
+            <button onClick={closeCam} className="nr-btn nr-btn--small nr-btn--bare">
               Cancel
             </button>
           </div>
-          <p className="mt-2 text-xs text-white/70">Hold the side with the composition (salt name and mg) and the MRP towards the camera.</p>
+          <p className="nr-strip__hint">Hold the side with the composition (salt name and mg) and the MRP towards the camera.</p>
         </div>
       )}
-      {msg && <p className="mt-2 text-sm text-ink-soft">{msg}</p>}
+      {msg && <p className="nr-strip__msg">{msg}</p>}
     </div>
   );
 }
