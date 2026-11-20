@@ -26,6 +26,11 @@ export async function POST(req: Request) {
   }
   history.push({ role: "user", content: said });
 
+  // The agent says the short "one moment" at once (typed replies took 6-8 s to start); the
+  // reply is spoken after it, in order.
+  const agent = s.agentId && !s.ended ? { agentId: s.agentId, channel: s.channel, agentUid: s.agentUid } : null;
+  const filler = agent ? speak(agent, lang.filler).catch((e) => console.error("speak failed", e)) : Promise.resolve();
+
   let reply = "";
   await runVoiceTurn({
     system: systemPrompt(lang),
@@ -41,18 +46,19 @@ export async function POST(req: Request) {
     logActivity(x, `Typed: "${said.slice(0, 60)}"`);
   });
 
-  if (s.agentId && !s.ended) {
+  await filler;
+  if (agent) {
     // The speak API takes up to 512 bytes, so long replies go out sentence by sentence.
     const parts = reply.match(/[^.!?।]+[.!?।]?/g) ?? [reply];
     let chunk = "";
     for (const p of parts) {
       if (new TextEncoder().encode(chunk + p).length > 480 && chunk) {
-        await speak({ agentId: s.agentId, channel: s.channel, agentUid: s.agentUid }, chunk).catch((e) => console.error("speak failed", e));
+        await speak(agent, chunk).catch((e) => console.error("speak failed", e));
         chunk = "";
       }
       chunk += p;
     }
-    if (chunk.trim()) await speak({ agentId: s.agentId, channel: s.channel, agentUid: s.agentUid }, chunk).catch((e) => console.error("speak failed", e));
+    if (chunk.trim()) await speak(agent, chunk).catch((e) => console.error("speak failed", e));
   }
   return Response.json({ reply });
 }
