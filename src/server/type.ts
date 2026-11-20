@@ -5,13 +5,17 @@ import { runVoiceTurn } from "@/lib/claude";
 import { speak } from "@/lib/agora";
 import { getLang } from "@/lib/languages";
 import { stateNote, systemPrompt } from "@/lib/prompt";
-import { getState, logActivity, updateState } from "@/lib/store";
+import { countHit, getState, logActivity, updateState } from "@/lib/store";
 import { TOOLS, runTool } from "@/lib/tools";
+
+const MAX_TYPED_PER_CALL = 40;
 
 export async function POST(req: Request) {
   const { sid, text } = (await req.json().catch(() => ({}))) as { sid?: string; text?: string };
-  const s = sid ? await getState(sid) : null;
+  const s = typeof sid === "string" ? await getState(sid) : null;
   if (!s) return Response.json({ error: "call not found" }, { status: 404 });
+  if ((await countHit(`type:${s.sid}`, 86400)) > MAX_TYPED_PER_CALL)
+    return Response.json({ error: "This call has reached its limit of typed lines. Start a new call." }, { status: 429 });
   const said = (text ?? "").trim().slice(0, 500);
   if (!said) return Response.json({ error: "type something first" }, { status: 400 });
   const lang = getLang(s.lang);

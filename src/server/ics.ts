@@ -3,7 +3,11 @@ import { getState } from "@/lib/store";
 import { PRODUCT } from "@/lib/brand";
 
 
-const esc = (s: string) => s.replace(/[\\,;]/g, (c) => `\\${c}`).replace(/\n/g, "\\n");
+// Text values escaped as RFC 5545 asks; any line break (\r too) becomes a literal "\n",
+// so a brand name can never start a new calendar line.
+const esc = (s: string) => s.slice(0, 300).replace(/[\\,;]/g, (c) => `\\${c}`).replace(/\r\n|\r|\n/g, "\\n");
+// Long lines folded at 73 characters with CRLF + space.
+const fold = (line: string) => (line.length <= 73 ? line : (line.match(/.{1,73}/gu) ?? [line]).join("\r\n "));
 
 export async function GET(_req: Request, sid: string) {
   const s = await getState(sid);
@@ -27,7 +31,9 @@ export async function GET(_req: Request, sid: string) {
       `DESCRIPTION:${esc(`Refill ${r.brand} at Jan Aushadhi`)}`,
       "END:VALARM",
       "END:VEVENT",
-    ].join("\r\n");
+    ]
+      .map(fold)
+      .join("\r\n");
   });
   const body = ["BEGIN:VCALENDAR", "VERSION:2.0", `PRODID:-//${PRODUCT.name}//EN`, "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR"].join("\r\n");
   return new Response(body, { headers: { "Content-Type": "text/calendar; charset=utf-8", "Content-Disposition": `attachment; filename="refill-reminders.ics"` } });

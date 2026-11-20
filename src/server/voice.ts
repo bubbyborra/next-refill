@@ -1,13 +1,17 @@
 // "Listen": the list as a short voice note in the caller's language, spoken by the same
 // Murf Falcon voice as the call (Murf's streaming endpoint, MP3).
 import { writeVoiceNote } from "@/lib/claude";
+import { envValue } from "@/lib/env";
 import { getLang } from "@/lib/languages";
-import { getState, updateState } from "@/lib/store";
+import { countHit, getState, updateState } from "@/lib/store";
 import { totals } from "@/lib/tools";
+
+const MAX_PLAYS_PER_CALL = 12;
 
 export async function GET(_req: Request, sid: string): Promise<Response> {
   const s = await getState(sid);
   if (!s || !s.meds.length) return new Response("No list yet", { status: 404 });
+  if ((await countHit(`voice:${s.sid}`, 86400)) > MAX_PLAYS_PER_CALL) return new Response("This list's voice note has been played too many times today", { status: 429 });
   const lang = getLang(s.lang);
   const t = totals(s);
   const details = [
@@ -31,8 +35,8 @@ export async function GET(_req: Request, sid: string): Promise<Response> {
   }
   const murf = await fetch("https://api.murf.ai/v1/speech/stream", {
     method: "POST",
-    headers: { "api-key": process.env.MURF_API_KEY ?? "", "Content-Type": "application/json" },
-    body: JSON.stringify({ text, voiceId: lang.voiceId, locale: lang.murfLocale, model: process.env.MURF_MODEL || "FALCON", format: "MP3" }),
+    headers: { "api-key": envValue("MURF_API_KEY") ?? "", "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voiceId: lang.voiceId, locale: lang.murfLocale, model: envValue("MURF_MODEL") || "FALCON", format: "MP3" }),
   });
   if (!murf.ok || !murf.body) return new Response(`Voice note failed (${murf.status})`, { status: 502 });
   return new Response(murf.body, { headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" } });

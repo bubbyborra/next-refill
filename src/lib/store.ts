@@ -1,6 +1,7 @@
 // Per-call state shared by the model route, the tools, the call screen and the phone page.
 // Uses Upstash Redis (REST) when its env vars are set, so every serverless instance sees the
 // same call; otherwise an in-memory map, which is fine for one local server.
+import { envValue } from "./env";
 import type { Form, QueryIngredient, Release } from "./products";
 import type { LangCode } from "./languages";
 
@@ -67,8 +68,8 @@ export interface CallState {
 
 const TTL_SECONDS = 60 * 60 * 24 * 3;
 
-const redisUrl = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const redisUrl = envValue("KV_REST_API_URL") || envValue("UPSTASH_REDIS_REST_URL");
+const redisToken = envValue("KV_REST_API_TOKEN") || envValue("UPSTASH_REDIS_REST_TOKEN");
 
 type Mem = Map<string, string>;
 const g = globalThis as unknown as { __callStore?: Mem };
@@ -112,6 +113,29 @@ export async function updateState(sid: string, fn: (s: CallState) => void | Prom
 export function logActivity(s: CallState, text: string) {
   s.activity.push({ t: Date.now(), text });
   if (s.activity.length > 40) s.activity.splice(0, s.activity.length - 40);
+}
+
+// Counts hits on a named limit within a window that starts at the first hit, shared by every
+// server instance when Redis is set. If the store can't be reached the hit isn't counted
+// (returns 0), so a store outage never blocks a call.
+const hits = new Map<string, { n: number; until: number }>();
+export async function countHit(name: string, windowSeconds: number): Promise<number> {
+  const k = `hits:${name}`;
+  try {
+    if (redisUrl && redisToken) {
+      const n = Number(await redis(["INCR", k]));
+      if (n === 1) await redis(["EXPIRE", k, windowSeconds]);
+      return n;
+    }
+  } catch (e) {
+    console.error("limit counter unavailable", e);
+    return 0;
+  }
+  const now = Date.now();
+  const cur = hits.get(k);
+  const next = cur && cur.until > now ? { n: cur.n + 1, until: cur.until } : { n: 1, until: now + windowSeconds * 1000 };
+  hits.set(k, next);
+  return next.n;
 }
 
 export function storeKind(): "redis" | "memory" {

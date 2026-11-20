@@ -1,23 +1,27 @@
 // Starts a call: a fresh channel, a token for the browser, and the Agora agent.
 import { clientToken, startAgent, stopAgent } from "@/lib/agora";
+import { envValue } from "@/lib/env";
 import { getLang } from "@/lib/languages";
 import { baseUrl, jsonError, newId } from "@/lib/http";
-import { getState, logActivity, putState, updateState, type CallState } from "@/lib/store";
+import { countHit, getState, logActivity, putState, updateState, type CallState } from "@/lib/store";
 import { nearest } from "@/lib/stores";
 
-// A simple cap per visitor, so a public link can't run up the Agora and model bills.
-const starts = new Map<string, number[]>();
-function tooMany(ip: string): boolean {
-  const now = Date.now();
-  const recent = (starts.get(ip) ?? []).filter((t) => now - t < 60 * 60_000);
-  recent.push(now);
-  starts.set(ip, recent);
-  return recent.length > Number(process.env.MAX_CALLS_PER_HOUR || 20);
+// Caps shared by every server instance, so a public link can't run up the Agora, speech and
+// model bills: calls per network per hour (a venue's Wi-Fi is one network, so it's generous)
+// and calls per day in total.
+const PER_IP_HOUR = Number(process.env.MAX_CALLS_PER_HOUR || 60);
+const PER_DAY = Number(process.env.MAX_CALLS_PER_DAY || 300);
+
+function clientIp(req: Request): string {
+  // On Vercel, x-real-ip and x-forwarded-for are set by the platform, not by the caller.
+  return (req.headers.get("x-real-ip") || req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
 }
 
 export async function POST(req: Request) {
-  const ip = (req.headers.get("x-forwarded-for") || "local").split(",")[0].trim();
-  if (tooMany(ip)) return jsonError("Too many calls from here in the last hour. Please try again later.", 429);
+  if ((await countHit(`ip:${clientIp(req)}`, 3600)) > PER_IP_HOUR)
+    return jsonError("Too many calls from this network in the last hour. Please try again later.", 429);
+  if ((await countHit(`day:${new Date().toISOString().slice(0, 10)}`, 86400)) > PER_DAY)
+    return jsonError("The demo has reached today's limit of calls. Please try again tomorrow.", 429);
   const body = (await req.json().catch(() => ({}))) as { lang?: string; lat?: number; lon?: number };
   const lang = getLang(body.lang);
   const sid = newId();
@@ -42,7 +46,7 @@ export async function POST(req: Request) {
   }
   return Response.json({
     sid,
-    appId: process.env.AGORA_APP_ID,
+    appId: envValue("AGORA_APP_ID"),
     channel,
     uid: userUid,
     agentUid,

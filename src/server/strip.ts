@@ -3,15 +3,28 @@
 import { readStrip } from "@/lib/claude";
 import { speak } from "@/lib/agora";
 import { getLang } from "@/lib/languages";
-import { getState, logActivity, updateState } from "@/lib/store";
+import { countHit, getState, logActivity, updateState } from "@/lib/store";
+
+const MAX_BODY_BYTES = 4_400_000; // under the host's 4.5 MB request limit
+const MAX_PHOTOS_PER_CALL = 6;
 
 export async function POST(req: Request) {
-  const { sid, image } = (await req.json()) as { sid?: string; image?: string };
-  const s = sid ? await getState(sid) : null;
+  if (Number(req.headers.get("content-length") || 0) > MAX_BODY_BYTES)
+    return Response.json({ error: "send a JPEG, PNG or WebP photo under 3 MB" }, { status: 413 });
+  const { sid, image } = (await req.json().catch(() => ({}))) as { sid?: string; image?: string };
+  const s = typeof sid === "string" ? await getState(sid) : null;
   if (!s) return Response.json({ error: "call not found" }, { status: 404 });
-  const m = image?.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
-  if (!m || m[2].length > 6_000_000) return Response.json({ error: "send a JPEG, PNG or WebP photo under 4 MB" }, { status: 400 });
-  const reading = await readStrip(m[2], m[1] as "image/jpeg" | "image/png" | "image/webp");
+  const m = typeof image === "string" ? image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/) : null;
+  if (!m || m[2].length > MAX_BODY_BYTES) return Response.json({ error: "send a JPEG, PNG or WebP photo under 3 MB" }, { status: 400 });
+  if ((await countHit(`strip:${s.sid}`, 86400)) > MAX_PHOTOS_PER_CALL)
+    return Response.json({ error: "This call has reached its limit of strip photos. Start a new call." }, { status: 429 });
+  let reading: Awaited<ReturnType<typeof readStrip>>;
+  try {
+    reading = await readStrip(m[2], m[1] as "image/jpeg" | "image/png" | "image/webp");
+  } catch (e) {
+    console.error("strip read failed", e);
+    return Response.json({ error: "Couldn't read that photo. Try again with the strip flat and in good light." }, { status: 422 });
+  }
   const lang = getLang(s.lang);
   const comp = reading.ingredients.map((i) => `${i.name} ${i.strength} ${i.unit}`).join(" + ");
   const summary = reading.readable

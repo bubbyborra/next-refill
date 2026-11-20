@@ -4,7 +4,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { describe, findMatches, monthlyCost, type Form, type Release } from "./products";
 import { geocode, nearest } from "./stores";
-import { logActivity, updateState, type CallState, type Med } from "./store";
+import { getState, logActivity, updateState, type CallState, type Med } from "./store";
 
 const FORMS = ["tablet", "capsule", "syrup", "suspension", "injection", "cream", "gel", "ointment", "drops", "inhaler", "powder", "other"] as const;
 const RELEASES = ["normal", "extended", "delayed", "dispersible"] as const;
@@ -74,10 +74,10 @@ export const TOOLS: Anthropic.Tool[] = [
   } as Anthropic.Tool,
 ];
 
-const Ingredient = z.object({ name: z.string().min(1), strength: z.number().positive(), unit: z.enum(UNITS) });
+const Ingredient = z.object({ name: z.string().min(1).max(80), strength: z.number().positive(), unit: z.enum(UNITS) });
 const FindInput = z.object({
-  brand_name: z.string().min(1),
-  ingredients: z.array(Ingredient).min(1),
+  brand_name: z.string().min(1).max(80),
+  ingredients: z.array(Ingredient).min(1).max(6),
   form: z.enum(FORMS),
   release: z.enum(RELEASES),
 });
@@ -85,10 +85,10 @@ const SaveInput = FindInput.extend({
   doses_per_day: z.number().positive().max(12),
   brand_price_rupees: z.number().positive().optional(),
   brand_pack_count: z.number().positive().optional(),
-  for_whom: z.string().optional(),
+  for_whom: z.string().max(40).optional(),
 });
-const RemoveInput = z.object({ brand_name: z.string().min(1) });
-const StoreInput = z.object({ area_or_pincode: z.string().optional() });
+const RemoveInput = z.object({ brand_name: z.string().min(1).max(80) });
+const StoreInput = z.object({ area_or_pincode: z.string().max(120).optional() });
 const SendInput = z.object({ caller_confirmed: z.boolean() });
 
 const money = (n: number) => Math.round(n);
@@ -108,6 +108,8 @@ function addDays(d: Date, n: number) {
   return x;
 }
 
+const MAX_MEDS = 20;
+
 export async function runTool(sid: string, name: string, raw: unknown): Promise<{ content: string; isError?: boolean }> {
   const bad = (e: z.ZodError) => ({ content: JSON.stringify({ error: "invalid input", issues: e.issues.map((i) => `${i.path.join(".")}: ${i.message}`) }), isError: true });
 
@@ -115,6 +117,10 @@ export async function runTool(sid: string, name: string, raw: unknown): Promise<
     const p = SaveInput.safeParse(raw);
     if (!p.success) return bad(p.error);
     const d = p.data;
+    const before = await getState(sid);
+    const isNew = before && !before.meds.some((m) => m.id === d.brand_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+    if (before && isNew && before.meds.length >= MAX_MEDS)
+      return { content: JSON.stringify({ error: `This call already has ${MAX_MEDS} medicines, the most one list holds. Ask the caller to start a new call for more.` }), isError: true };
     const r = findMatches({ ingredients: d.ingredients, form: d.form as Form, release: d.release as Release });
     const product = r.exact[0];
     let result: Record<string, unknown> = {};
