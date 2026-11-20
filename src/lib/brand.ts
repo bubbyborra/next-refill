@@ -1,5 +1,5 @@
-// Product name and tagline in one place. Working name until Vivek picks the final one.
+// Product name and tagline in one place.
 export const PRODUCT = {
-  name: "Wahi Dawa",
+  name: "Dawa Twin",
   tagline: "Same medicine. Jan Aushadhi price.",
 };

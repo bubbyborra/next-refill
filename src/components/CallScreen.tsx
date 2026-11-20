@@ -35,7 +35,7 @@ export function CallScreen() {
             <h1 className="text-4xl font-bold leading-tight tracking-tight text-ink sm:text-5xl">
               Say your medicines.
               <br />
-              <span className="text-leaf">Hear what you'd save.</span>
+              <span className="text-accent">Hear what you'd save.</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink-soft">
               Tell it, in your own language, which tablets you buy every month. It finds the same salt and strength in the
@@ -50,7 +50,7 @@ export function CallScreen() {
                     key={l.code}
                     onClick={() => setLang(l.code)}
                     className={`rounded-full border px-4 py-2 text-base transition ${
-                      lang === l.code ? "border-leaf bg-leaf text-white" : "border-line bg-paper text-ink hover:border-leaf"
+                      lang === l.code ? "border-accent bg-accent text-white" : "border-line bg-paper text-ink hover:border-accent"
                     }`}
                   >
                     {l.native}
@@ -62,7 +62,7 @@ export function CallScreen() {
               <button
                 onClick={() => call.start(lang)}
                 disabled={call.phase === "starting"}
-                className="flex items-center gap-3 rounded-full bg-ink px-7 py-4 text-lg font-semibold text-white shadow-lg shadow-ink/20 transition hover:bg-leaf disabled:opacity-60"
+                className="flex items-center gap-3 rounded-full bg-ink px-7 py-4 text-lg font-semibold text-white shadow-lg shadow-ink/20 transition hover:bg-accent disabled:opacity-60"
               >
                 <MicIcon />
                 {call.phase === "starting" ? "Connecting…" : "Start talking"}
@@ -122,11 +122,11 @@ export function CallScreen() {
 function Mark() {
   return (
     <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="shrink-0">
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="#0f6b4f" />
-      <rect x="20" y="9" width="18" height="22" rx="0" fill="#f6efe1" />
-      <rect x="20" y="9" width="18" height="22" rx="11" fill="#f6efe1" />
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" stroke="#14261d" strokeWidth="2" />
-      <path d="M20 9v22" stroke="#14261d" strokeWidth="2" />
+      <rect x="2" y="9" width="36" height="22" rx="11" fill="#3346d3" />
+      <rect x="20" y="9" width="18" height="22" rx="0" fill="#efebf7" />
+      <rect x="20" y="9" width="18" height="22" rx="11" fill="#efebf7" />
+      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" stroke="#1d2233" strokeWidth="2" />
+      <path d="M20 9v22" stroke="#1d2233" strokeWidth="2" />
     </svg>
   );
 }
@@ -144,7 +144,7 @@ function MoodPill({ mood, ended }: { mood: string; ended: boolean }) {
   const label = ended ? "Call ended" : mood === "speaking" ? "Speaking" : mood === "thinking" ? "Checking" : mood === "listening" ? "Listening" : "Connected";
   return (
     <span className="flex items-center gap-2 rounded-full bg-cream px-3 py-1.5 text-sm font-medium text-ink">
-      <span className={`h-2.5 w-2.5 rounded-full ${ended ? "bg-ink-soft" : mood === "speaking" ? "animate-pulse bg-leaf" : mood === "thinking" ? "animate-pulse bg-amber" : "bg-leaf"}`} />
+      <span className={`h-2.5 w-2.5 rounded-full ${ended ? "bg-ink-soft" : mood === "speaking" ? "animate-pulse bg-accent" : mood === "thinking" ? "animate-pulse bg-amber" : "bg-accent"}`} />
       {label}
     </span>
   );
@@ -180,7 +180,7 @@ function Activity({ state }: { state: PublicState | null }) {
       <ol className="space-y-1.5 text-sm text-ink">
         {state.activity.slice(-6).map((a) => (
           <li key={a.t + a.text} className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-leaf" />
+            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
             {a.text}
           </li>
         ))}
@@ -210,7 +210,7 @@ function Bill({ state }: { state: PublicState | null }) {
                 </p>
                 <p className="text-sm text-ink-soft">{m.composition}</p>
                 {m.ja ? (
-                  <p className="mt-1 text-sm text-leaf">
+                  <p className="mt-1 text-sm text-accent">
                     Jan Aushadhi: {m.ja.name} · code {m.ja.code}
                     {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
                   </p>
@@ -233,7 +233,7 @@ function Bill({ state }: { state: PublicState | null }) {
         ))}
       </ul>
       {t && t.pricedCount > 0 && (
-        <div className="mt-2 rounded-2xl bg-leaf px-5 py-4 text-white">
+        <div className="mt-2 rounded-2xl bg-accent px-5 py-4 text-white">
           <p className="text-sm opacity-90">You save every month</p>
           <p className="text-4xl font-bold tracking-tight">{rupees(t.monthlySaving)}</p>
           <p className="text-sm opacity-90">
@@ -255,7 +255,7 @@ function StoreCard({ state }: { state: PublicState | null }) {
       <p className="text-sm text-ink-soft">{s.address}</p>
       <div className="mt-3 flex items-center gap-3">
         <span className="rounded-full bg-cream px-3 py-1 text-sm text-ink">about {s.km} km</span>
-        <a href={s.mapsUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-leaf underline-offset-4 hover:underline">
+        <a href={s.mapsUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-accent underline-offset-4 hover:underline">
           Directions
         </a>
       </div>
@@ -267,11 +267,11 @@ function PhoneCard({ sid, state }: { sid: string; state: PublicState | null }) {
   const [qr, setQr] = useState<string | null>(null);
   const url = useMemo(() => (typeof window === "undefined" ? "" : `${window.location.origin}/p/${sid}`), [sid]);
   useEffect(() => {
-    if (url) QRCode.toDataURL(url, { margin: 1, width: 220, color: { dark: "#14261d", light: "#ffffff" } }).then(setQr);
+    if (url) QRCode.toDataURL(url, { margin: 1, width: 220, color: { dark: "#1d2233", light: "#ffffff" } }).then(setQr);
   }, [url]);
   const sent = Boolean(state?.sent);
   return (
-    <div className={`flex items-center gap-5 rounded-3xl border p-5 ${sent ? "border-leaf bg-leaf/5" : "border-line bg-white"}`}>
+    <div className={`flex items-center gap-5 rounded-3xl border p-5 ${sent ? "border-accent bg-accent/5" : "border-line bg-white"}`}>
       {qr && <img src={qr} alt="QR code for this list on your phone" className="h-28 w-28 rounded-lg" />}
       <div>
         <p className="font-semibold text-ink">{sent ? "Sent to your phone" : "On your phone"}</p>
@@ -280,7 +280,7 @@ function PhoneCard({ sid, state }: { sid: string; state: PublicState | null }) {
             ? `Scan to open the list for the pharmacist, directions, and refill reminders from ${state?.sent?.reminders[0]?.date ?? ""}.`
             : "Scan to follow along. Say yes when it offers to send the list, and the reminders appear here."}
         </p>
-        <a href={`/p/${sid}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-leaf">
+        <a href={`/p/${sid}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-accent">
           Open the list
         </a>
       </div>

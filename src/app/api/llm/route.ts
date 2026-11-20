@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   const id = `chatcmpl-${sid}-${Date.now()}`;
   const created = Math.floor(Date.now() / 1000);
   const chunk = (delta: Record<string, unknown>, finish: string | null = null) =>
-    enc.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model: "wahi-dawa", choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
+    enc.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model: "dawa-twin", choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 
   const stream = new ReadableStream({
     async start(controller) {

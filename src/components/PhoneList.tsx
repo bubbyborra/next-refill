@@ -41,12 +41,12 @@ export function PhoneList({ sid }: { sid: string }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-12 pt-5">
-      <p className="text-sm font-semibold text-leaf">{PRODUCT.name}</p>
+      <p className="text-sm font-semibold text-accent">{PRODUCT.name}</p>
       <h1 className="mt-1 text-2xl font-bold text-ink">Show this to the pharmacist</h1>
       <p className="mt-1 text-sm text-ink-soft">Same salt, same strength, from the Jan Aushadhi list. Ask your doctor if in doubt.</p>
 
       {s.totals.pricedCount > 0 && (
-        <div className="mt-5 rounded-2xl bg-leaf px-5 py-4 text-white">
+        <div className="mt-5 rounded-2xl bg-accent px-5 py-4 text-white">
           <p className="text-sm opacity-90">You save every month</p>
           <p className="text-4xl font-bold">{rupees(s.totals.monthlySaving)}</p>
           <p className="text-sm opacity-90">{rupees(s.totals.yearlySaving)} a year</p>
@@ -65,7 +65,7 @@ export function PhoneList({ sid }: { sid: string }) {
                   {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
                 </p>
                 {m.monthlySaving !== undefined && (
-                  <p className="mt-1 text-sm text-leaf">
+                  <p className="mt-1 text-sm text-accent">
                     {rupees(m.monthlyBrand)} → {rupees(m.monthlyJa)} a month
                   </p>
                 )}
@@ -95,7 +95,7 @@ export function PhoneList({ sid }: { sid: string }) {
           </a>
         )}
         {matched.length > 0 && (
-          <a href={`https://wa.me/?text=${encodeURIComponent(share)}`} className="rounded-full bg-[#25D366] px-4 py-3 text-center font-semibold text-white">
+          <a href={`https://wa.me/?text=${encodeURIComponent(share)}`} className="rounded-full bg-ink px-4 py-3 text-center font-semibold text-white">
             Share on WhatsApp
           </a>
         )}

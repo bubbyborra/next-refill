@@ -1,8 +1,8 @@
-# Wahi Dawa
+# Dawa Twin
 
 **Same medicine. Jan Aushadhi price.**
 
-Wahi Dawa is a voice agent you talk to in your own language: Telugu, Tamil, Hindi, English, Kannada, Malayalam, Bengali, Marathi or Gujarati. Tell it the tablets you buy every month, by the name on the strip. It finds the exact same composition in the government's Jan Aushadhi list, says what you'd pay there and what you'd save each month, finds the nearest Jan Aushadhi Kendra, and puts the list, directions and monthly refill reminders on your phone.
+Dawa Twin is a voice agent you talk to in your own language: Telugu, Tamil, Hindi, English, Kannada, Malayalam, Bengali, Marathi or Gujarati. Tell it the tablets you buy every month, by the name on the strip. It finds the exact same composition in the government's Jan Aushadhi list, says what you'd pay there and what you'd save each month, finds the nearest Jan Aushadhi Kendra, and puts the list, directions and monthly refill reminders on your phone.
 
 Built for Track 5, Voice AI for Bharat, at Build with Agora – Bengaluru 2026, on Agora Conversational AI and Murf Falcon.
 
@@ -10,7 +10,7 @@ Built for Track 5, Voice AI for Bharat, at Build with Agora – Bengaluru 2026, 
 
 Jan Aushadhi Kendras sell generic medicines from the government's PMBJP scheme. The official Product & MRP List has 2,453 products (2,100 with a price), and the Locate Kendra list has 21,891 stores across India, 528 of them in Bengaluru Urban (both read from janaushadhi.gov.in on 20 Nov 2026).
 
-But people buy medicines by brand name. The generic name is in small English print on the back of the strip, and the price comparison is per tablet, per pack size. Say "Telma 40" in Telugu and you need to know it's Telmisartan 40 mg, that Jan Aushadhi lists Telmisartan Tablets IP 40mg at ₹12.38 for 10 (drug code 300), and how that compares with what you pay. Wahi Dawa does that part, by voice.
+But people buy medicines by brand name. The generic name is in small English print on the back of the strip, and the price comparison is per tablet, per pack size. Say "Telma 40" in Telugu and you need to know it's Telmisartan 40 mg, that Jan Aushadhi lists Telmisartan Tablets IP 40mg at ₹12.38 for 10 (drug code 300), and how that compares with what you pay. Dawa Twin does that part, by voice: it finds your medicine's identical twin on the Jan Aushadhi list.
 
 ## Try it in 30 seconds
 

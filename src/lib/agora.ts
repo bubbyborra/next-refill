@@ -45,7 +45,7 @@ export async function startAgent(opts: {
       new CustomLLM({
         url: `${opts.baseUrl}/api/llm?sid=${opts.sid}`,
         apiKey: env("LLM_ROUTE_KEY"),
-        model: "wahi-dawa",
+        model: "dawa-twin",
         greetingMessage: lang.greeting,
         failureMessage: lang.failure,
         maxHistory: 32,
@@ -62,7 +62,7 @@ export async function startAgent(opts: {
     );
 
   const session = agent.createSession({
-    name: `wd-${opts.sid}`,
+    name: `dt-${opts.sid}`,
     channel: opts.channel,
     agentUid: String(opts.agentUid),
     remoteUids: [String(opts.userUid)],

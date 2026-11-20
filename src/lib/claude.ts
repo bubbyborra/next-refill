@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
-export const MODEL = process.env.WD_MODEL || "claude-opus-5-5";
+export const MODEL = process.env.WD_MODEL || "claude-sonnet-5-5";
 
 function modelParams(model: string): Record<string, unknown> {
   // A voice call can't wait on hidden reasoning. Haiku 5.5 can turn thinking off (at effort
