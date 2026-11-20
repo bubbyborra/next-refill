@@ -34,12 +34,19 @@
     --logo-a: var(--act);
     --logo-b: var(--sheet-2);
     --logo-line: var(--ink);
+    --label-a: var(--hl);
+    --label-b: var(--sheet-2);
+    --bar-1: var(--hl);
+    --bar-2: var(--sheet-2);
+    --bar-3: var(--rule);
+    --fs-h2-sec: clamp(32px, calc(32px + 24 * ((100vw - 375px) / 1065)), 56px);
+    --fs-sec-lead: clamp(17px, calc(17px + 2 * ((100vw - 375px) / 1065)), 19px);
   }
 }
 
 @layer components {
-  .nr-app { min-height: 100dvh; }
-  .nr-main { width: min(100% - 2 * var(--gutter), var(--page-max)); margin-inline: auto; padding-bottom: var(--s-8); }
+  .nr-app { min-height: 100dvh; overflow-x: clip; }
+  .nr-main { width: min(100% - 2 * var(--gutter), var(--page-max)); margin-inline: auto; }
 
   /* ---------- Header ---------- */
   .nr-top__inner {
@@ -60,6 +67,7 @@
   /* ---------- Start screen ---------- */
   .nr-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--s-8); align-items: center; padding-block: var(--s-7) var(--s-8); }
   .nr-hero__copy { display: flex; flex-direction: column; gap: var(--s-5); min-width: 0; }
+  .nr-h1__line { display: block; text-wrap: balance; }
   .nr-h1 { font-family: var(--font-display); font-size: var(--fs-display); font-weight: var(--weight-display); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--ink); text-wrap: balance; }
   .nr-lead { font-size: var(--fs-lead); line-height: 1.45; color: var(--ink-2); max-width: 36em; }
   .nr-start { display: flex; flex-direction: column; gap: var(--s-5); }
@@ -171,8 +179,12 @@
   .nr-med__comp { font-size: var(--fs-small); color: var(--ink-3); }
   .nr-med__ja { margin-top: 4px; font-size: var(--fs-small); color: var(--act-ink); }
   .nr-med__miss { margin-top: 4px; font-size: var(--fs-small); color: var(--bad); }
-  .nr-med__prices { text-align: right; flex-shrink: 0; }
-  .nr-med__was { font-size: var(--fs-small); color: var(--ink-3); text-decoration: line-through; }
+  .nr-med__prices { flex-shrink: 0; display: grid; gap: 2px; min-width: 9.5rem; margin: 0; }
+  .nr-med__price { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+  .nr-med__price dt { font-size: var(--fs-label); color: var(--ink-3); }
+  .nr-med__price dd { margin: 0; }
+  .nr-med__was { font-size: var(--fs-small); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .nr-med__was[data-struck="yes"] { text-decoration: line-through; }
   .nr-med__now { font-family: var(--font-num); font-size: 1.125rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
   .nr-code { white-space: nowrap; }
 
@@ -194,19 +206,106 @@
   .nr-phonecard__title { font-weight: 600; color: var(--ink); }
   .nr-phonecard__text { margin-block: 4px var(--s-2); font-size: var(--fs-small); color: var(--ink-3); }
 
-  /* How it checks */
-  .nr-how { margin-top: var(--s-9); padding-top: var(--s-7); border-top: 1px solid var(--rule); }
-  .nr-how__label { font-size: var(--fs-small); font-weight: 600; color: var(--ink-3); margin-bottom: var(--s-5); }
+  /* ---------- Below the first screen: Era's section pattern ---------- */
+  /* Links to the sections, on a white strip under the banner */
+  .nr-subnav { background: var(--sheet); border-bottom: 1px solid var(--rule); }
+  .nr-subnav__inner {
+    width: min(100% - 2 * var(--gutter), var(--page-max)); margin-inline: auto;
+    display: flex; align-items: center; gap: var(--s-5); min-height: 44px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .nr-subnav__inner::-webkit-scrollbar { display: none; }
+  .nr-subnav__link { font-size: 14px; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+  .nr-subnav__link:hover { color: var(--ink); text-decoration: underline; }
+
+  /* Era's three-colour bar between the first screen and the sections */
+  .nr-bar { height: 6px; margin-top: var(--s-8); background: linear-gradient(90deg, var(--bar-1) 0 50%, var(--bar-2) 50% 75%, var(--bar-3) 75% 100%); }
+
+  /* A section: a coloured label at the far left, the content to its right; full-width hairlines between */
+  .nr-sec { position: relative; display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 0 38px; padding-block: var(--s-8); }
+  .nr-sec::before { content: ""; position: absolute; top: 0; left: 50%; width: 100vw; height: 1px; background: var(--rule); transform: translateX(-50%); }
+  .nr-bar + .nr-sec::before { display: none; }
+  .nr-sec__label { --lab: var(--label-a); position: relative; align-self: start; margin: 6px 0 0; font-size: 15px; line-height: 1.45; color: var(--ink); }
+  .nr-sec__label[data-tone="alt"] { --lab: var(--label-b); }
+  .nr-sec__label span { background: var(--lab); padding: 2px 6px 2px 0; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .nr-sec__label::before { content: ""; position: absolute; right: 100%; top: 0; bottom: 0; width: 100vw; background: var(--lab); }
+  .nr-sec__body { min-width: 0; }
+  .nr-sec__h { font-family: var(--font-display); font-size: var(--fs-h2-sec); font-weight: var(--weight-display); line-height: 1.05; letter-spacing: var(--track-display); color: var(--ink); text-wrap: balance; }
+  .nr-sec__lead { margin-top: var(--s-5); max-width: 40em; font-size: var(--fs-sec-lead); line-height: 1.55; color: var(--ink-2); }
+
+  /* What is a Jan Aushadhi price: the example in a window, the facts beside it */
+  .nr-ja { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: var(--s-7); align-items: start; margin-top: var(--s-7); }
+  .nr-ja__win { margin: 0; background: var(--panel-bg); box-shadow: var(--shadow-window); }
+  .nr-ja__body { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.25fr); align-items: center; gap: var(--s-4); padding: var(--s-5); }
+  .nr-ja__brand { padding: var(--s-4); background: var(--sheet-2); }
+  .nr-ja__name { font-size: 1.125rem; font-weight: 600; color: var(--ink); }
+  .nr-ja__tag { font-size: var(--fs-small); font-weight: 400; color: var(--ink-2); }
+  .nr-ja__text { margin-top: 4px; font-size: var(--fs-small); color: var(--ink-2); }
+  .nr-ja__arrow { color: var(--ink-2); }
+  .nr-ja__card { padding: var(--s-4) 18px; background: var(--hl); color: var(--on-hl); outline: 8px solid var(--sheet-2); }
+  .nr-ja__small { font-size: var(--fs-label); }
+  .nr-ja__generic { margin-top: 4px; font-size: 1.0625rem; font-weight: 600; line-height: 1.3; }
+  .nr-ja__code { font-size: var(--fs-small); }
+  .nr-ja__price { margin-top: var(--s-3); font-family: var(--font-num); font-size: 1.75rem; font-weight: var(--weight-num); letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .nr-ja__price span { font-family: var(--font-body); font-size: var(--fs-small); font-weight: 400; letter-spacing: 0; }
+  .nr-ja__src { max-width: none; padding: var(--s-3) var(--s-5); border-top: 1px solid var(--rule); font-size: var(--fs-label); color: var(--ink-2); }
+  .nr-facts { margin: 0; display: grid; }
+  .nr-fact { padding-block: var(--s-4) var(--s-5); border-top: 1px solid var(--rule); }
+  .nr-fact dt { font-family: var(--font-num); font-size: 2rem; font-weight: var(--weight-num); letter-spacing: -0.03em; line-height: 1.1; color: var(--ink); }
+  .nr-fact dd { margin: 6px 0 0; font-size: var(--fs-small); line-height: 1.5; color: var(--ink-2); }
+
+  /* Why people miss it: the front and back of a strip, drawn */
+  .nr-strips { margin: var(--s-7) 0 0; max-width: 760px; }
+  .nr-strips__pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+  .nr-foil { position: relative; aspect-ratio: 16 / 9; padding: 18px 20px; overflow: hidden; background: var(--foil, #e7e4ea); border: 1px solid var(--rule); box-shadow: var(--shadow-window); }
+  .nr-foil__brand { max-width: none; font-family: var(--font-display); font-size: clamp(30px, 3.6vw, 46px); font-weight: 600; letter-spacing: -0.045em; line-height: 1; color: var(--ink); }
+  .nr-foil__pills { position: absolute; inset: auto 20px 18px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+  .nr-foil__pills i { aspect-ratio: 1.7; border-radius: 999px; background: var(--sheet); box-shadow: inset 0 -4px 0 rgb(40 35 39 / 0.07), 0 0 0 1px var(--rule); }
+  .nr-foil--back { display: flex; flex-direction: column; justify-content: center; gap: 9px; background: var(--foil-back, #dcd8dd); }
+  .nr-foil__line { display: block; height: 6px; background: var(--foil-ink, #bdb7bd); }
+  .nr-foil__salt { align-self: flex-start; padding: 1px 4px; background: var(--hl); font-size: 13px; line-height: 1.3; color: var(--ink); }
+  .nr-strips__cap { margin-top: var(--s-3); font-size: var(--fs-label); color: var(--ink-2); }
+
+  /* How it works: four numbered steps */
+  .nr-steps { list-style: none; margin: var(--s-7) 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-6); }
+  .nr-step { max-width: none; }
+  .nr-step__n { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1.5px solid var(--ink); border-radius: 4px; font-size: 15px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .nr-step__t { margin-top: var(--s-4); font-family: var(--font-heading); font-size: 1.1875rem; font-weight: var(--weight-heading); letter-spacing: var(--track-heading); line-height: 1.25; color: var(--ink); }
+  .nr-step__d { margin-top: var(--s-2); font-size: var(--fs-small); line-height: 1.6; color: var(--ink-2); }
+
+  /* How it matches (three columns) */
   .nr-how__cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-6); }
   .nr-how__title { font-family: var(--font-heading); font-size: 1.125rem; font-weight: var(--weight-heading); color: var(--ink); letter-spacing: var(--track-heading); }
   .nr-how__text { margin-top: var(--s-2); font-size: var(--fs-small); line-height: 1.6; color: var(--ink-2); }
+
+  /* Questions: hairline rows, question left, answer right */
+  .nr-faq { margin: 0; }
+  .nr-faq__row { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s-2) var(--s-7); padding-block: var(--s-5); border-top: 1px solid var(--rule); }
+  .nr-faq__row:first-child { padding-top: 0; border-top: 0; }
+  .nr-faq__q { font-family: var(--font-heading); font-size: 1.1875rem; font-weight: var(--weight-heading); letter-spacing: var(--track-heading); line-height: 1.3; color: var(--ink); }
+  .nr-faq__a { margin: 0; font-size: 1rem; line-height: 1.6; color: var(--ink-2); }
+
+  /* ---------- Footer (Era's: small print, link columns, the name) ---------- */
+  .nr-foot { padding-bottom: var(--s-7); }
+  .nr-foot__inner { width: min(100% - 2 * var(--gutter), var(--page-max)); margin-inline: auto; }
+  .nr-foot__inner::before { content: ""; display: block; height: 2px; background: linear-gradient(90deg, var(--bar-1) 0 50%, var(--bar-2) 50% 75%, var(--bar-3) 75% 100%); }
+  .nr-foot__fine { max-width: none; margin-top: var(--s-7); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+  .nr-foot__fine a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 3px; white-space: nowrap; }
+  .nr-foot__links { display: flex; flex-wrap: wrap; gap: var(--s-3) 160px; margin-top: var(--s-6); padding-top: 40px; border-top: 1px solid var(--rule); }
+  .nr-foot__links ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-2); align-content: start; }
+  .nr-foot__links a { font-size: 1rem; color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 3px; }
+  .nr-foot__links a:hover { color: var(--ink); }
+  .nr-foot__brand { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); margin-top: 40px; padding-top: var(--s-6); border-top: 1px solid var(--rule); }
+  .nr-foot__brand .nr-mark { width: 28px; height: 28px; }
+  .nr-foot__name { font-family: var(--font-display); font-size: 1rem; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+  .nr-foot__tag { font-size: 14px; color: var(--ink-2); }
 
   /* ---------- Phone list ---------- */
   .nr-list { width: min(100% - 32px, 448px); margin-inline: auto; padding-block: var(--s-5) var(--s-7); }
   .nr-list__brand { display: flex; align-items: center; gap: var(--s-2); font-family: var(--font-display); font-weight: 700; color: var(--ink); }
   .nr-list__brand .nr-mark { width: 28px; height: 28px; }
   .nr-list__note { margin-top: var(--s-3); padding: var(--s-2) var(--s-3); border-radius: var(--r-control); background: var(--banner-bg); color: var(--banner-fg); font-size: var(--fs-label); }
-  .nr-list__h1 { margin-top: var(--s-4); font-family: var(--font-display); font-size: 1.75rem; font-weight: var(--weight-display); letter-spacing: var(--track-heading); line-height: 1.15; color: var(--ink); }
+  .nr-list__h1 { text-wrap: balance; margin-top: var(--s-4); font-family: var(--font-display); font-size: 1.75rem; font-weight: var(--weight-display); letter-spacing: var(--track-heading); line-height: 1.15; color: var(--ink); }
   .nr-list__sub { margin-top: var(--s-2); font-size: var(--fs-small); color: var(--ink-3); }
   .nr-list .nr-total { margin-top: var(--s-5); }
   .nr-list__meds { list-style: none; padding: 0; margin-top: var(--s-5); display: grid; gap: var(--s-3); }
@@ -226,11 +325,24 @@
     .nr-hero { grid-template-columns: 1fr; gap: var(--s-6); padding-block: var(--s-5) var(--s-6); }
     .nr-call { grid-template-columns: 1fr; }
     .nr-how__cols { grid-template-columns: 1fr; gap: var(--s-5); }
+    .nr-bar { margin-top: var(--s-7); }
+    .nr-sec { grid-template-columns: 1fr; gap: var(--s-5); padding-block: var(--s-7); }
+    .nr-sec__label { justify-self: start; margin-top: 0; }
+    .nr-ja { grid-template-columns: 1fr; }
+    .nr-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nr-faq__row { grid-template-columns: 1fr; }
   }
   @media (max-width: 520px) {
     .nr-brand { flex-wrap: wrap; row-gap: 0; }
     .nr-transcript { height: 22rem; }
     .nr-phonecard { flex-direction: column; align-items: flex-start; }
+    .nr-med { flex-direction: column; gap: var(--s-2); }
+    .nr-med__prices { min-width: 0; }
+    .nr-ja__body { grid-template-columns: 1fr; padding: var(--s-4); }
+    .nr-ja__arrow { transform: rotate(90deg); justify-self: center; }
+    .nr-strips__pair { grid-template-columns: 1fr; }
+    .nr-steps { grid-template-columns: 1fr; gap: var(--s-5); }
+    .nr-foot__links { gap: var(--s-2) var(--s-7); }
   }
 }
 

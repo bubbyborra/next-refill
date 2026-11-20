@@ -77,6 +77,15 @@
   --logo-a: #c9b8fb;
   --logo-b: #fffdfb;
   --logo-line: #282327;
+  /* Era's section labels (lilac and peach; its mint is left out: no green) and its three-colour bar */
+  --label-a: #c9b8fb;
+  --label-b: #fecca1;
+  --bar-1: #c9b8fb;
+  --bar-2: #feb4d7;
+  --bar-3: #9ed1fe;
+  --foil: #e7e4ea;
+  --foil-back: #dcd8dd;
+  --foil-ink: #bdb7bd;
 }
 
 :root {
@@ -126,14 +135,10 @@
   .nr-mood { border-radius: 2px; }
   .nr-tag { border-radius: 2px; }
   .nr-total { outline: 8px solid #eeebe8; margin: 20px 8px 8px; }
-  .nr-how { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 0 38px; margin-top: 64px; padding-top: 64px; }
-  .nr-how__label { align-self: start; margin: 0; padding: 2px 8px; background: #c9b8fb; color: var(--ink); font-size: 13px; font-weight: 500; }
   @media (max-width: 960px) {
     .nr-hero { grid-template-columns: 1fr; gap: 32px; padding-block: 28px 48px; }
     .nr-top { height: 150px; }
     .nr-hero__copy { gap: 20px; }
-    .nr-how { grid-template-columns: 1fr; gap: 20px; }
-    .nr-how__label { justify-self: start; }
   }
   @media (max-width: 520px) {
     --fs-display: 40px;

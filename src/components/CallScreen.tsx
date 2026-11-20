@@ -1,17 +1,20 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import QRCode from "qrcode";
 import { LANGS } from "@/lib/languages";
 import { PRODUCT } from "@/lib/brand";
 import { useCall, type PublicState } from "./useCall";
 import { StripCamera } from "./StripCamera";
 import { SAMPLE_LINES, SAMPLE_STATE } from "@/lib/sample";
+import { Mark, WindowBar, packOf } from "./Parts";
 
 const rupees = (n: number | undefined | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
 type View = null | "call" | "ended" | "loading" | "error";
 
-export function CallScreen() {
+// The start screen and the call screen. `children` are the sections below the first screen and
+// `footer` the site footer; both are static and rendered on the server by the page.
+export function CallScreen({ children, footer }: { children?: ReactNode; footer?: ReactNode }) {
   const [lang, setLang] = useState("te");
   const real = useCall();
   // "?state=call" (or "result") and "?state=ended" show a labelled sample call (a real test
@@ -35,7 +38,7 @@ export function CallScreen() {
   const showPanel = call.phase !== "idle" && call.phase !== "starting" && call.phase !== "error";
 
   return (
-    <div className="nr-app">
+    <div className="nr-app" id="top">
       <header className="nr-top">
         <div className="nr-top__inner">
           <a href="/" className="nr-brand">
@@ -43,25 +46,23 @@ export function CallScreen() {
             <span className="nr-brand__name">{PRODUCT.name}</span>
             <span className="nr-brand__tag">{PRODUCT.tagline}</span>
           </a>
-          <a href="#how" className="nr-top__link">
-            How it matches
+          <a href="#jan-aushadhi" className="nr-top__link">
+            What is Jan Aushadhi?
           </a>
         </div>
       </header>
+      {!showPanel && <SubNav />}
 
       <main className="nr-main">
         {!showPanel && (
           <section className="nr-hero">
             <div className="nr-hero__copy">
               <h1 className="nr-h1">
-                Say your medicines.
-                <br />
-                Hear what you&apos;d save.
+                <span className="nr-h1__line">Say your medicines.</span> <span className="nr-h1__line">Hear what you&apos;d save.</span>
               </h1>
               <p className="nr-lead">
-                Tell it, in your own language, which tablets you buy every month. It finds the same salt and strength in the
-                government&apos;s Jan Aushadhi list, works out the monthly saving, finds the nearest Jan Aushadhi store and puts
-                it all on your phone.
+                Tell it which tablets you buy every month, in your own language. It finds the same medicine at a government Jan
+                Aushadhi store, tells you how much less it costs there, and sends the list to your phone.
               </p>
               <div className="nr-start">
                 <div className="nr-langs">
@@ -144,21 +145,34 @@ export function CallScreen() {
           </>
         )}
 
-        <HowItChecks />
+        <div className="nr-bar" aria-hidden />
+        {children}
       </main>
+      {footer}
     </div>
   );
 }
 
-function Mark() {
+// Links to the sections below the first screen, on Era's white strip under the banner.
+const NAV = [
+  ["#jan-aushadhi", "What is Jan Aushadhi?"],
+  ["#why", "Why people miss it"],
+  ["#how-it-works", "How it works"],
+  ["#how", "How it matches"],
+  ["#questions", "Questions"],
+] as const;
+
+function SubNav() {
   return (
-    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden className="nr-mark">
-      <rect x="2" y="9" width="36" height="22" rx="11" className="nr-mark__a" />
-      <rect x="20" y="9" width="18" height="22" rx="0" className="nr-mark__b" />
-      <rect x="20" y="9" width="18" height="22" rx="11" className="nr-mark__b" />
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" strokeWidth="2" className="nr-mark__line" />
-      <path d="M20 9v22" strokeWidth="2" className="nr-mark__line" />
-    </svg>
+    <nav className="nr-subnav" aria-label="On this page">
+      <div className="nr-subnav__inner">
+        {NAV.map(([href, text]) => (
+          <a key={href} href={href} className="nr-subnav__link">
+            {text}
+          </a>
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -168,19 +182,6 @@ function MicIcon() {
       <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
-  );
-}
-
-// Era-style window chrome: a thin bar with three small dots.
-function WindowBar() {
-  return (
-    <div className="nr-winbar" aria-hidden>
-      <span className="nr-winbar__dots">
-        <i />
-        <i />
-        <i />
-      </span>
-    </div>
   );
 }
 
@@ -282,23 +283,36 @@ function Bill({ state }: { state: PublicState | null }) {
               <p className="nr-med__comp">{m.composition}</p>
               {m.ja ? (
                 <p className="nr-med__ja">
-                  Jan Aushadhi: {m.ja.name} · <span className="nr-code">code {m.ja.code}</span>
-                  {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
+                  Ask for {m.ja.name} · <span className="nr-code">drug code {m.ja.code}</span>
+                  {m.ja.mrp !== null && (
+                    <>
+                      {" · "}
+                      <span className="nr-code">
+                        ₹{m.ja.mrp} for {packOf(m.ja)}
+                      </span>
+                    </>
+                  )}
                 </p>
               ) : (
                 <p className="nr-med__miss">Not on the Jan Aushadhi list. Keep your current medicine.</p>
               )}
             </div>
-            <div className="nr-med__prices">
-              {m.monthlySaving !== undefined ? (
-                <>
-                  <p className="nr-med__was">{rupees(m.monthlyBrand)}</p>
-                  <p className="nr-med__now">{rupees(m.monthlyJa)}</p>
-                </>
-              ) : m.ja ? (
-                <p className="nr-med__was">{m.monthlyJa !== undefined ? rupees(m.monthlyJa) : "price?"}</p>
-              ) : null}
-            </div>
+            {m.ja && (
+              <dl className="nr-med__prices">
+                {m.monthlyBrand !== undefined && (
+                  <div className="nr-med__price">
+                    <dt>your price</dt>
+                    <dd className="nr-med__was" data-struck={m.monthlySaving !== undefined ? "yes" : "no"}>
+                      {rupees(m.monthlyBrand)}
+                    </dd>
+                  </div>
+                )}
+                <div className="nr-med__price">
+                  <dt>Jan Aushadhi</dt>
+                  <dd className="nr-med__now">{m.monthlyJa !== undefined ? rupees(m.monthlyJa) : "price?"}</dd>
+                </div>
+              </dl>
+            )}
           </li>
         ))}
       </ul>
@@ -447,36 +461,5 @@ function SampleBill() {
         </div>
       </div>
     </figure>
-  );
-}
-
-function HowItChecks() {
-  return (
-    <section id="how" className="nr-how">
-      <p className="nr-how__label">How it matches medicines</p>
-      <div className="nr-how__cols">
-        <div className="nr-how__col">
-          <h3 className="nr-how__title">Same medicine only</h3>
-          <p className="nr-how__text">
-            A match needs the same ingredients, strength, form and release type (SR, gastro-resistant…) as your strip. It never
-            suggests a different medicine, strength or dose.
-          </p>
-        </div>
-        <div className="nr-how__col">
-          <h3 className="nr-how__title">Government data</h3>
-          <p className="nr-how__text">
-            Prices come from PMBI&apos;s Jan Aushadhi product list, and stores from its Locate Kendra list (528 stores in
-            Bengaluru Urban).
-          </p>
-        </div>
-        <div className="nr-how__col">
-          <h3 className="nr-how__title">Not medical advice</h3>
-          <p className="nr-how__text">
-            Show the list to your pharmacist, and ask your doctor if you have any doubt. It doesn&apos;t sell medicines or keep
-            your phone number.
-          </p>
-        </div>
-      </div>
-    </section>
   );
 }

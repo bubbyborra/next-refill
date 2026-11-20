@@ -6,6 +6,7 @@ import { PRODUCT } from "@/lib/brand";
 import { getLang } from "@/lib/languages";
 import type { PublicState } from "./useCall";
 import { SAMPLE_STATE } from "@/lib/sample";
+import { Mark, packOf } from "./Parts";
 
 const rupees = (n?: number | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
 
@@ -38,7 +39,7 @@ export function PhoneList({ sid }: { sid: string }) {
   const store = s.stores?.[0];
   const share = [
     `${PRODUCT.name}: Jan Aushadhi list`,
-    ...matched.map((m) => `• ${m.brand} → ${m.ja!.name} (code ${m.ja!.code})${m.ja!.mrp !== null ? ` ₹${m.ja!.mrp}/${m.ja!.unit}` : ""}`),
+    ...matched.map((m) => `• ${m.brand} → ${m.ja!.name} (code ${m.ja!.code})${m.ja!.mrp !== null ? ` ₹${m.ja!.mrp} for ${packOf(m.ja!)}` : ""}`),
     s.totals.pricedCount ? `Saving: ${rupees(s.totals.monthlySaving)} a month` : "",
     store ? `Store: ${store.name}, ${store.address} ${store.mapsUrl}` : "",
   ]
@@ -48,11 +49,11 @@ export function PhoneList({ sid }: { sid: string }) {
   return (
     <main className="nr-list">
       <p className="nr-list__brand">
-        <ListMark />
+        <Mark />
         {PRODUCT.name}
       </p>
       {sid === "sample" && <p className="nr-list__note">Sample list from a real test call (21 Nov 2026), shown as an illustration.</p>}
-      <h1 className="nr-list__h1">Show this to the pharmacist</h1>
+      <h1 className="nr-list__h1">Show this at a Jan&nbsp;Aushadhi store</h1>
       <p className="nr-list__sub">Same salt, same strength, from the Jan Aushadhi list. Ask your doctor if in doubt.</p>
 
       {s.totals.pricedCount > 0 && (
@@ -72,7 +73,7 @@ export function PhoneList({ sid }: { sid: string }) {
                 <p className="nr-list__name">{m.ja.name}</p>
                 <p className="nr-list__code">
                   Drug code <strong>{m.ja.code}</strong>
-                  {m.ja.mrp !== null && ` · ₹${m.ja.mrp} per ${m.ja.unit}`}
+                  {m.ja.mrp !== null && ` · ₹${m.ja.mrp} for ${packOf(m.ja)}`}
                 </p>
                 {m.monthlySaving !== undefined && (
                   <p className="nr-list__save">
@@ -115,18 +116,6 @@ export function PhoneList({ sid }: { sid: string }) {
         Prices: PMBI Jan Aushadhi product list. Stores: janaushadhi.gov.in Locate Kendra. Distances are approximate.
       </p>
     </main>
-  );
-}
-
-function ListMark() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 40 40" aria-hidden className="nr-mark">
-      <rect x="2" y="9" width="36" height="22" rx="11" className="nr-mark__a" />
-      <rect x="20" y="9" width="18" height="22" rx="0" className="nr-mark__b" />
-      <rect x="20" y="9" width="18" height="22" rx="11" className="nr-mark__b" />
-      <rect x="2" y="9" width="36" height="22" rx="11" fill="none" strokeWidth="2" className="nr-mark__line" />
-      <path d="M20 9v22" strokeWidth="2" className="nr-mark__line" />
-    </svg>
   );
 }
 
