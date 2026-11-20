@@ -8,10 +8,10 @@ function env(name: string): string {
   return v;
 }
 
-let _client: AgoraClient | null = null;
+// A fresh client per request: a long-lived one ended up sending an expired token
+// ("Token is expired") once the server had been up for about an hour.
 export function agora(): AgoraClient {
-  if (!_client) _client = new AgoraClient({ area: Area.AP, appId: env("AGORA_APP_ID"), appCertificate: env("AGORA_APP_CERTIFICATE") });
-  return _client;
+  return new AgoraClient({ area: Area.AP, appId: env("AGORA_APP_ID"), appCertificate: env("AGORA_APP_CERTIFICATE") });
 }
 
 export function clientToken(channel: string, uid: number): string {

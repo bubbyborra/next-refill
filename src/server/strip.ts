@@ -5,8 +5,6 @@ import { speak } from "@/lib/agora";
 import { getLang } from "@/lib/languages";
 import { getState, logActivity, updateState } from "@/lib/store";
 
-export const maxDuration = 60;
-
 export async function POST(req: Request) {
   const { sid, image } = (await req.json()) as { sid?: string; image?: string };
   const s = sid ? await getState(sid) : null;

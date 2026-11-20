@@ -7,8 +7,6 @@ import { stateNote, systemPrompt } from "@/lib/prompt";
 import { getState } from "@/lib/store";
 import { TOOLS, runTool } from "@/lib/tools";
 
-export const maxDuration = 60;
-
 type InMsg = { role: string; content: string | { type?: string; text?: string }[] | null };
 
 function toAnthropic(messages: InMsg[]): Anthropic.MessageParam[] {

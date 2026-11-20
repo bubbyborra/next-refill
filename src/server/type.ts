@@ -8,8 +8,6 @@ import { stateNote, systemPrompt } from "@/lib/prompt";
 import { getState, logActivity, updateState } from "@/lib/store";
 import { TOOLS, runTool } from "@/lib/tools";
 
-export const maxDuration = 60;
-
 export async function POST(req: Request) {
   const { sid, text } = (await req.json().catch(() => ({}))) as { sid?: string; text?: string };
   const s = sid ? await getState(sid) : null;

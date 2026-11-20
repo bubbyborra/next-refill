@@ -5,8 +5,6 @@ import { baseUrl, jsonError, newId } from "@/lib/http";
 import { getState, logActivity, putState, updateState, type CallState } from "@/lib/store";
 import { nearest } from "@/lib/stores";
 
-export const maxDuration = 60;
-
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { lang?: string; lat?: number; lon?: number };
   const lang = getLang(body.lang);
