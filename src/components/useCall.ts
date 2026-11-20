@@ -121,13 +121,22 @@ export function useCall() {
         const { default: AgoraRTM } = await import("agora-rtm");
         const r = new AgoraRTM.RTM(s.appId, String(s.uid));
         r.addEventListener("message", (e: { message: unknown }) => handleMessage(e.message));
+        type UserState = { userId?: string; states?: Record<string, string> };
         r.addEventListener(
           "presence",
-          (e: { eventType?: string; publisher?: string; stateChanged?: Record<string, string>; snapshot?: { userId?: string; states?: Record<string, string> }[] | null }) => {
+          (e: { eventType?: string; publisher?: string; stateChanged?: Record<string, string>; snapshot?: UserState[] | null; interval?: { userStateList?: UserState[] } | null }) => {
+            // Kept on window (last 100) so the demo-path check can report what arrived.
+            const w = window as unknown as { __nrPresence?: unknown[] };
+            const log = (w.__nrPresence ??= []);
+            if (log.length < 100) log.push({ t: Date.now(), type: e.eventType, publisher: e.publisher, state: e.stateChanged?.state });
+            const agentIn = (list?: UserState[] | null) => list?.find((u) => u.userId !== String(s.uid) && u.states?.state)?.states?.state;
             if (e.eventType === "REMOTE_STATE_CHANGED" && e.publisher !== String(s.uid) && e.stateChanged?.state) handleAgentState(e.stateChanged.state);
             else if (e.eventType === "SNAPSHOT") {
-              const agent = e.snapshot?.find((u) => u.userId !== String(s.uid) && u.states?.state);
-              if (agent?.states?.state) handleAgentState(agent.states.state);
+              const st = agentIn(e.snapshot);
+              if (st) handleAgentState(st);
+            } else if (e.eventType === "INTERVAL") {
+              const st = agentIn(e.interval?.userStateList);
+              if (st) handleAgentState(st);
             }
           },
         );

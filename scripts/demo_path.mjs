@@ -264,6 +264,7 @@ try {
   } catch {}
   result.moods = await moods().catch(() => []);
   result.agentMessages = await page.evaluate(() => window.__rtm).catch(() => []);
+  result.presence = await page.evaluate(() => window.__nrPresence ?? []).catch(() => []);
   result.console = consoleLines.slice(-80);
   const video = page.video();
   await context.close();

@@ -48,11 +48,22 @@ export async function POST(req: Request) {
   const chunk = (delta: Record<string, unknown>, finish: string | null = null) =>
     enc.encode(`data: ${JSON.stringify({ id, object: "chat.completion.chunk", created, model: "next-refill", choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
 
+  // A substantial line from the caller (a medicine, an area, a yes to sending) almost always
+  // means a check, so the short "one moment" goes out at once instead of after the model's
+  // first round, which takes a second or two. Short lines ("hello", "ok") wait for the model.
+  const last = history[history.length - 1];
+  const lastText = typeof last?.content === "string" ? last.content : "";
+  const early = last?.role === "user" && lastText.length >= 12 && !lastText.startsWith("(");
+
   const stream = new ReadableStream({
     async start(controller) {
       let spoke = false;
       let filled = false;
       const t0 = Date.now();
+      if (early) {
+        filled = true;
+        controller.enqueue(chunk({ content: `${lang.filler} ` }));
+      }
       try {
         await runVoiceTurn({
           system: systemPrompt(lang),

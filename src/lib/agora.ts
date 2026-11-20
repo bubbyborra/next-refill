@@ -80,6 +80,16 @@ function agentHeaders(a: AgentRef) {
   return { Authorization: `agora token=${token}` };
 }
 
+// The agent's status as Agora reports it (RUNNING, FAILED, STOPPED...), or null if unknown.
+export async function agentStatus(a: AgentRef): Promise<string | null> {
+  try {
+    const r = (await agora().agents.get({ appid: env("AGORA_APP_ID"), agentId: a.agentId }, { headers: agentHeaders(a) })) as unknown as { status?: string };
+    return r.status ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function stopAgent(a: AgentRef): Promise<void> {
   await agora().agents.stop({ appid: env("AGORA_APP_ID"), agentId: a.agentId }, { headers: agentHeaders(a) });
 }

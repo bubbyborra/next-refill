@@ -1,5 +1,6 @@
 // Starts a call: a fresh channel, a token for the browser, and the Agora agent.
-import { clientToken, startAgent, stopAgent } from "@/lib/agora";
+import { after } from "next/server";
+import { agentStatus, clientToken, startAgent, stopAgent } from "@/lib/agora";
 import { envValue } from "@/lib/env";
 import { getLang } from "@/lib/languages";
 import { baseUrl, jsonError, newId } from "@/lib/http";
@@ -36,9 +37,30 @@ export async function POST(req: Request) {
   logActivity(state, `Call started in ${lang.name}`);
   await putState(state);
   try {
-    const agentId = await startAgent({ sid, lang, channel, userUid, agentUid, baseUrl: baseUrl(req) });
+    const opts = { sid, lang, channel, userUid, agentUid, baseUrl: baseUrl(req) };
+    const agentId = await startAgent(opts);
     await updateState(sid, (s) => {
       s.agentId = agentId;
+    });
+    // Agora now and then fails an agent a second after a good start ("agent exits with reason:
+    // RTC connection error"). After the response has gone, check it and start a fresh agent on
+    // the same channel if it failed (twice at most); the caller only waits a little longer.
+    after(async () => {
+      let current = agentId;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        if ((await agentStatus({ agentId: current, channel, agentUid })) !== "FAILED") return;
+        console.warn(`[session ${sid}] agent ${current} failed after start; starting another`);
+        try {
+          current = await startAgent(opts);
+          await updateState(sid, (s) => {
+            s.agentId = current;
+          });
+        } catch (e) {
+          console.error(`[session ${sid}] agent restart failed`, e);
+          return;
+        }
+      }
     });
   } catch (e) {
     console.error("agent start failed", e);
