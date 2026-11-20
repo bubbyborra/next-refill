@@ -2,55 +2,63 @@
 
 **Same medicine. Jan Aushadhi price.**
 
-Next Refill is a voice agent you talk to in your own language: Telugu, Tamil, Hindi, English, Kannada, Malayalam, Bengali, Marathi or Gujarati. Tell it the tablets you buy every month, by the name on the strip. It finds the exact same composition in the government's Jan Aushadhi list, says what you'd pay there and what you'd save each month, finds the nearest Jan Aushadhi Kendra, and puts the list, directions and monthly refill reminders on your phone.
+Say the medicines you buy every month, in your own language, and Next Refill finds the exact same salt and strength on the government's Jan Aushadhi list, tells you what you'd save, and puts the list for the pharmacist on your phone.
 
-Built for Track 5, Voice AI for Bharat, at Build with Agora – Bengaluru 2026, on Agora Conversational AI and Murf Falcon.
+It needs a real-time voice agent because the people it's for know their tablets by brand name and speak Telugu, Tamil, Hindi or Kannada, not the English fine print on the strip: Agora's Conversational AI runs the call and Murf's Falcon voices answer in their language.
 
-## Why
-
-Jan Aushadhi Kendras sell generic medicines from the government's PMBJP scheme. The official Product & MRP List has 2,453 products (2,100 with a price), and the Locate Kendra list has 21,891 stores across India, 528 of them in Bengaluru Urban (both read from janaushadhi.gov.in on 20 Nov 2026).
-
-But people buy medicines by brand name. The generic name is in small English print on the back of the strip, and the price comparison is per tablet, per pack size. Say "Telma 40" in Telugu and you need to know it's Telmisartan 40 mg, that Jan Aushadhi lists Telmisartan Tablets IP 40mg at ₹12.38 for 10 (drug code 300), and how that compares with what you pay. Next Refill does that part, by voice, so your next refill costs less.
+**Live:** https://next-refill.vercel.app
 
 ## Try it in 30 seconds
 
-1. Open the live app, pick your language and press **Start talking**.
-2. Say a medicine you buy, how many a day, and the strip's price, e.g. "Telma 40, one a day, 230 rupees for 30" (illustrative price).
-3. Hear the saving, then say your area. Say "yes" when it offers to send the list, and scan the QR code.
+1. Open the live app, pick your language and press **Start talking** (or type in the box if the room is noisy).
+2. Say a medicine you buy, how many a day and the price on the strip, for example "Telma 40, one a day, 230 rupees for 30" (an illustrative price).
+3. Hear the saving. Say your area, say "yes" when it offers to send the list, and scan the QR code: the list for the pharmacist, directions, refill reminders and a voice note in your language.
 
 ## What a call does
 
-- **Understands the strip name.** It works out the composition from the brand, says it back so you can check it against the strip, or reads the strip through the camera ("Show the strip").
+- **Understands the strip name.** It works out the composition from the brand and says it back so you can check it against the strip, or reads the strip through the camera.
 - **Checks the official list.** A match needs the same ingredients, strength, form and release type (SR, gastro-resistant, dispersible). Anything else is reported, never suggested. It never changes a medicine, strength or dose.
 - **Works out the saving** from the price you said (or the strip photo) and the Jan Aushadhi MRP, per month and per year.
 - **Finds the nearest Kendra** from the official store list.
-- **Sends it to your phone**, only after you say yes: the generic name and drug code to show the pharmacist, directions, a WhatsApp share and monthly refill reminders (a calendar file).
-- **Reads it out**: "Listen" on the phone plays the list as a short voice note in your language, in the same voice as the call, for parents who can't read the English print.
-- **Works in a noisy room**: "Type instead" sends a typed line through the same agent, and the agent still says the reply. Without a microphone the call still starts.
+- **Sends it to your phone**, only after you say yes: the generic name and drug code for the pharmacist, directions, a WhatsApp share and monthly refill reminders.
+- **Reads it out:** "Listen" on the phone plays the list as a short voice note in your language, in the same voice as the call.
+- **Works in a noisy room:** "Type instead" sends a typed line through the same agent, and the agent still says the reply.
 
 ## How it uses Agora and Murf
 
-- **Agora Conversational AI Engine** (official `agora-agents` SDK): one agent per call, with Sarvam speech-to-text in the caller's language, our own model endpoint and a Murf Falcon voice. [`src/lib/agora.ts`](src/lib/agora.ts)
-- **Custom model endpoint**: Agora calls `/api/llm` as an OpenAI-style streaming endpoint. It runs the model with four tools that work on the official lists, and says a short "one moment" in the caller's language while it checks. [`src/server/llm.ts`](src/server/llm.ts), [`src/lib/tools.ts`](src/lib/tools.ts)
-- **Agora RTC and RTM**: the browser's microphone audio, the live transcript and the agent's listening/thinking/speaking state. [`src/components/useCall.ts`](src/components/useCall.ts)
-- **Agora speak API**: after a strip photo is read, the agent says what it saw on the call; typed lines are answered the same way. Calls on a running agent are signed with a ConvoAI token. [`src/server/strip.ts`](src/server/strip.ts), [`src/server/type.ts`](src/server/type.ts)
-- **Murf Falcon voices**: a native voice per language where Murf has one (Tamil, Hindi, Kannada, Malayalam, Bengali, Marathi, Gujarati), and a multilingual voice speaking Telugu and English. The phone page's voice note uses Murf's streaming endpoint with the same voice. [`src/lib/languages.ts`](src/lib/languages.ts), [`src/server/voice.ts`](src/server/voice.ts)
+- **Agora Conversational AI Engine** (the official `agora-agents` SDK): one agent per call, with Sarvam speech-to-text in the caller's language, our own model endpoint and a Murf Falcon voice. [`src/lib/agora.ts`](src/lib/agora.ts)
+- **Custom model endpoint:** Agora calls `/api/llm` as an OpenAI-style streaming endpoint. It runs an AI model with four tools that work on the official lists, and says a short "one moment" in the caller's language while it checks. [`src/server/llm.ts`](src/server/llm.ts), [`src/lib/tools.ts`](src/lib/tools.ts)
+- **Agora RTC and RTM:** the browser's microphone audio, the live transcript and the agent's listening, checking and speaking state. [`src/components/useCall.ts`](src/components/useCall.ts)
+- **Agora speak API:** after a strip photo is read, the agent says what it saw on the call; typed lines are answered the same way. [`src/server/strip.ts`](src/server/strip.ts), [`src/server/type.ts`](src/server/type.ts)
+- **Murf Falcon voices:** a native voice for Tamil, Hindi, Kannada, Malayalam, Bengali, Marathi and Gujarati, and a multilingual voice speaking Telugu and English. The phone page's voice note uses Murf's streaming endpoint with the same voice. [`src/lib/languages.ts`](src/lib/languages.ts), [`src/server/voice.ts`](src/server/voice.ts)
 
-The model behind the agent is Claude (Anthropic), with reasoning turned off so it answers quickly on a call.
+## Evidence
+
+> Evidence, stated plainly: no real users yet; it was built for this hackathon. Instead: our own break test of the main claim, that it only ever matches the same medicine, run against the government's own list. It reruns from the repo with one command.
+
+> Claim: Next Refill never returned an exact match at a different strength: 0 of 1,173 doubled-strength queries (95% interval 0.0% to 0.3%).
+> Evidence type: Our own break test (we tried to make it fail), not real users.
+> Data: PMBI's Product & MRP List (janaushadhi.gov.in, read 20 Nov 2026), every priced tablet and capsule whose name parses into ingredients, n = 1,173. Baseline: none published.
+> Result: all 1,173 find themselves from their own composition (95% interval 99.7% to 100.0%), and all 15 hand-written traps behave (wrong strength, form or release type, unknown drugs, mcg against mg, combination order).
+> Rerun: `npx tsx scripts/break_test.ts` at commit 56b7702. Limits: our parser of the list's product names; tablets and capsules only; the step from brand name to composition (an AI model, or the strip photo) isn't covered.
+
+The first run found a real bug, now fixed: two valproate combination tablets (codes 1806 and 1807) couldn't match themselves.
+
+Limits, in numbers: zero real users; the break test covers matching only, not speech recognition or the brand step. On 20 common chronic medicines typed in by the composition on their strips (`npx tsx scripts/check_matcher.ts`), 18 matched exactly, Janumet was correctly not matched (the list has only the extended-release version) and Shelcal was missed (the strip says 1250 mg calcium carbonate, the list says 500 mg calcium).
 
 ## Check it yourself
 
-- Matching on 20 common chronic-disease medicines, entered by the composition printed on the strip: `npx tsx scripts/check_matcher.ts`. Result on 20 Nov 2026: 18 exact matches; Janumet 50/500 was correctly *not* matched (Jan Aushadhi lists only the extended-release version); Shelcal 500 was missed because the list states calcium as 500 mg elemental calcium while the strip says 1250 mg calcium carbonate.
-- Test calls (typed through the same agent, with prices the caller states): English, Telma 40 and Glycomet 500 → codes 300 and 145, ₹302 a month saved; Tamil, Thyronorm 50 → code 1221 (100-tablet bottle), ₹46 a month saved.
-- Data, with sources: [`data/source/`](data/source). Rebuild with `python3 scripts/build_products.py data/source/pmbi-product-mrp-list.tsv` and `python3 scripts/build_stores.py`.
+- The live app: https://next-refill.vercel.app (a call works without a microphone too: type instead).
+- The data, with sources: [`data/source/`](data/source). Rebuild with `python3 scripts/build_products.py data/source/pmbi-product-mrp-list.tsv` and `python3 scripts/build_stores.py`.
+- All checks: `./check.sh` (types, the 20 medicines, the break test).
 
 ## What doesn't work yet
 
 - Stores cover Bengaluru Urban only (525 of the 528 listed have coordinates). Distances are measured from the centre of each store's PIN code, so they're approximate.
 - 353 products on the official list show no price yet ("under process"); for those it says the price isn't listed.
-- The brand-to-composition step uses the model's knowledge of Indian brands. That's why it asks you to check the strip, and why the camera reads the strip directly.
+- The brand-to-composition step uses an AI model's knowledge of Indian brands. That's why it asks you to check the strip, and why the camera reads the strip directly.
 - It can't order medicines or check a store's stock: there's no public API for either.
-- The greetings in Kannada, Malayalam, Bengali, Marathi and Gujarati haven't been checked by native speakers yet.
+- The lines in Kannada, Malayalam, Bengali, Marathi and Gujarati haven't been checked by native speakers yet.
 - Not medical advice. It only compares prices for the same composition; show the list to your pharmacist, and to your doctor if in doubt.
 
 ## Run it locally
@@ -62,4 +70,4 @@ npm run dev -- --port 3440
 cloudflared tunnel --url http://localhost:3440   # Agora must reach /api/llm; put the URL in PUBLIC_BASE_URL
 ```
 
-Needs an Agora project (App ID and certificate, Conversational AI enabled), a Murf API key, a Sarvam API key and an Anthropic API key.
+Needs an Agora project (App ID and certificate, Conversational AI enabled), Murf, Sarvam and Anthropic API keys, and optionally Upstash Redis (needed when hosted on more than one server instance, as on Vercel).
