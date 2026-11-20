@@ -9,20 +9,24 @@
 // It prints how long each answer took to start: from the end of the caller's line to the
 // agent's "Speaking" state on the page (speech-to-text endpointing included).
 //
-// Usage: node scripts/demo_path.mjs [base-url] [lang]
+// Usage: node scripts/demo_path.mjs [base-url] [lang] [--typed]
 //   defaults: https://next-refill.vercel.app te   (lang: te or hi)
+//   --typed sends each caller line through "Type instead" (the noisy-room path) instead of
+//   speaking it; the agent must still say every reply on the call.
 // Each run is a real call of about two minutes on the project's Agora, Sarvam, Murf and
 // Anthropic accounts. Screenshots, a screen recording and result.json go to out/demo-path/.
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 
-const BASE = (process.argv[2] || "https://next-refill.vercel.app").replace(/\/$/, "");
-const LANG = process.argv[3] || "te";
+const ARGS = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const TYPED = process.argv.includes("--typed");
+const BASE = (ARGS[0] || "https://next-refill.vercel.app").replace(/\/$/, "");
+const LANG = ARGS[1] || "te";
 const ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const AUDIO = path.join(ROOT, "scripts", "demo-audio");
 const SCRIPT = JSON.parse(fs.readFileSync(path.join(AUDIO, "lines.json"), "utf8"))[LANG];
-const OUT = path.join(ROOT, "out", "demo-path", `${LANG}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`);
+const OUT = path.join(ROOT, "out", "demo-path", `${LANG}${TYPED ? "-typed" : ""}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`);
 const SCRIPT_CHARS = { te: /[ఀ-౿]/, hi: /[ऀ-ॿ]/ }[LANG];
 if (!SCRIPT || !SCRIPT_CHARS) {
   console.error(`demo_path: no caller lines for "${LANG}" (te or hi)`);
@@ -188,7 +192,13 @@ try {
     const said = SCRIPT.lines[i];
     const baseline = (await agentLines()).length;
     const tStart = Date.now();
-    const seconds = await page.evaluate((b) => window.__say(b), b64);
+    let seconds = 0;
+    if (TYPED) {
+      await page.fill("form.nr-type input", said);
+      await page.click("form.nr-type button");
+    } else {
+      seconds = await page.evaluate((b) => window.__say(b), b64);
+    }
     const tEnd = Date.now();
     const w = await waitForAgent(sid, tEnd, TURNS[i].until, baseline);
     const after = w.log.filter((m) => m.t >= tEnd);
