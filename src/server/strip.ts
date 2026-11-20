@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   });
   if (s.agentId) {
     const line = reading.readable && comp
-      ? `${lang.code === "en" ? "I can see" : ""} ${reading.brand_name ?? ""}: ${comp}${reading.mrp_rupees ? `, ${Math.round(reading.mrp_rupees)} ${lang.rupees} / ${reading.units_per_pack ?? "?"}` : ""}.`
+      ? `${lang.code === "en" ? "I can see" : ""} ${reading.brand_name ?? ""}: ${comp}${reading.mrp_rupees ? `, MRP ${Math.round(reading.mrp_rupees)} ${lang.rupees}` : ""}.`
       : lang.failure;
     await speak({ agentId: s.agentId, channel: s.channel, agentUid: s.agentUid }, line.trim()).catch((e) => console.error("speak failed", e));
   }

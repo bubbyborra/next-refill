@@ -90,11 +90,12 @@ async function startAgentFor(s: CallState, base: string): Promise<void> {
   // and start a fresh one on the same channel if it fails (twice at most).
   after(async () => {
     let current = agentId;
+    let currentUid = agentUid;
     let restarts = 0;
     let since = Date.now();
     while (Date.now() - since < 9000) {
       await new Promise((r) => setTimeout(r, 1500));
-      const st = await agentStatus({ agentId: current, channel, agentUid });
+      const st = await agentStatus({ agentId: current, channel, agentUid: currentUid });
       if (st !== "FAILED") {
         if (st === null) console.warn(`[session ${sid}] agent ${current} status unknown`);
         continue;
@@ -105,12 +106,16 @@ async function startAgentFor(s: CallState, base: string): Promise<void> {
         return;
       }
       restarts++;
-      console.warn(`[session ${sid}] agent ${current} failed after start; starting another (${restarts})`);
+      // A new uid for the replacement, so it never collides with the failed agent's RTC or RTM
+      // session if that hasn't closed yet. The browser treats any other uid as the agent.
+      currentUid = agentUid + restarts;
+      console.warn(`[session ${sid}] agent ${current} failed after start; starting another as uid ${currentUid} (${restarts})`);
       try {
-        current = await startAgent(opts);
+        current = await startAgent({ ...opts, agentUid: currentUid });
         since = Date.now();
         await updateState(sid, (x) => {
           x.agentId = current;
+          x.agentUid = currentUid;
         });
       } catch (e) {
         console.error(`[session ${sid}] agent restart failed`, e);
