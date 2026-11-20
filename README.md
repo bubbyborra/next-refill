@@ -25,20 +25,23 @@ But people buy medicines by brand name. The generic name is in small English pri
 - **Works out the saving** from the price you said (or the strip photo) and the Jan Aushadhi MRP, per month and per year.
 - **Finds the nearest Kendra** from the official store list.
 - **Sends it to your phone**, only after you say yes: the generic name and drug code to show the pharmacist, directions, a WhatsApp share and monthly refill reminders (a calendar file).
+- **Reads it out**: "Listen" on the phone plays the list as a short voice note in your language, in the same voice as the call, for parents who can't read the English print.
+- **Works in a noisy room**: "Type instead" sends a typed line through the same agent, and the agent still says the reply. Without a microphone the call still starts.
 
 ## How it uses Agora and Murf
 
 - **Agora Conversational AI Engine** (official `agora-agents` SDK): one agent per call, with Sarvam speech-to-text in the caller's language, our own model endpoint and a Murf Falcon voice. [`src/lib/agora.ts`](src/lib/agora.ts)
-- **Custom model endpoint**: Agora calls `/api/llm` as an OpenAI-style streaming endpoint. It runs the model with four tools that work on the official lists, and says a short "one moment" in the caller's language while it checks. [`src/app/api/llm/route.ts`](src/app/api/llm/route.ts), [`src/lib/tools.ts`](src/lib/tools.ts)
+- **Custom model endpoint**: Agora calls `/api/llm` as an OpenAI-style streaming endpoint. It runs the model with four tools that work on the official lists, and says a short "one moment" in the caller's language while it checks. [`src/server/llm.ts`](src/server/llm.ts), [`src/lib/tools.ts`](src/lib/tools.ts)
 - **Agora RTC and RTM**: the browser's microphone audio, the live transcript and the agent's listening/thinking/speaking state. [`src/components/useCall.ts`](src/components/useCall.ts)
-- **Agora speak API**: after a strip photo is read, the agent says what it saw on the call. [`src/app/api/strip/route.ts`](src/app/api/strip/route.ts)
-- **Murf Falcon voices**: a native voice per language where Murf has one (Tamil, Hindi, Kannada, Malayalam, Bengali, Marathi, Gujarati), and a multilingual voice speaking Telugu. [`src/lib/languages.ts`](src/lib/languages.ts)
+- **Agora speak API**: after a strip photo is read, the agent says what it saw on the call; typed lines are answered the same way. Calls on a running agent are signed with a ConvoAI token. [`src/server/strip.ts`](src/server/strip.ts), [`src/server/type.ts`](src/server/type.ts)
+- **Murf Falcon voices**: a native voice per language where Murf has one (Tamil, Hindi, Kannada, Malayalam, Bengali, Marathi, Gujarati), and a multilingual voice speaking Telugu and English. The phone page's voice note uses Murf's streaming endpoint with the same voice. [`src/lib/languages.ts`](src/lib/languages.ts), [`src/server/voice.ts`](src/server/voice.ts)
 
 The model behind the agent is Claude (Anthropic), with reasoning turned off so it answers quickly on a call.
 
 ## Check it yourself
 
 - Matching on 20 common chronic-disease medicines, entered by the composition printed on the strip: `npx tsx scripts/check_matcher.ts`. Result on 20 Nov 2026: 18 exact matches; Janumet 50/500 was correctly *not* matched (Jan Aushadhi lists only the extended-release version); Shelcal 500 was missed because the list states calcium as 500 mg elemental calcium while the strip says 1250 mg calcium carbonate.
+- Test calls (typed through the same agent, with prices the caller states): English, Telma 40 and Glycomet 500 → codes 300 and 145, ₹302 a month saved; Tamil, Thyronorm 50 → code 1221 (100-tablet bottle), ₹46 a month saved.
 - Data, with sources: [`data/source/`](data/source). Rebuild with `python3 scripts/build_products.py data/source/pmbi-product-mrp-list.tsv` and `python3 scripts/build_stores.py`.
 
 ## What doesn't work yet
