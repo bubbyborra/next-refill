@@ -3,6 +3,7 @@
 // the nearest store, refill reminders and a WhatsApp share. Updates live during the call.
 import { useEffect, useState } from "react";
 import { PRODUCT } from "@/lib/brand";
+import { getLang } from "@/lib/languages";
 import type { PublicState } from "./useCall";
 
 const rupees = (n?: number | null) => (n === undefined || n === null ? "–" : `₹${Math.round(n).toLocaleString("en-IN")}`);
@@ -89,6 +90,7 @@ export function PhoneList({ sid }: { sid: string }) {
       )}
 
       <div className="mt-5 grid gap-3">
+        {s.meds.length > 0 && <ListenButton sid={sid} label={`Listen in ${getLang(s.lang).native}`} />}
         {s.sent && (
           <a href={`/api/ics/${sid}`} className="rounded-full border border-ink px-4 py-3 text-center font-semibold text-ink">
             Add monthly refill reminders (from {s.sent.reminders[0]?.date})
@@ -104,5 +106,16 @@ export function PhoneList({ sid }: { sid: string }) {
         Prices: PMBI Jan Aushadhi product list. Stores: janaushadhi.gov.in Locate Kendra. Distances are approximate.
       </p>
     </main>
+  );
+}
+
+function ListenButton({ sid, label }: { sid: string; label: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  return src ? (
+    <audio src={src} controls autoPlay className="w-full" />
+  ) : (
+    <button onClick={() => setSrc(`/api/voice/${sid}?t=${Date.now()}`)} className="rounded-full bg-accent px-4 py-3 text-center font-semibold text-white">
+      {label}
+    </button>
   );
 }

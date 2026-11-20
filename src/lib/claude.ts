@@ -169,3 +169,25 @@ export async function readStrip(imageBase64: string, mediaType: "image/jpeg" | "
   const text = res.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text ?? "{}";
   return JSON.parse(text) as StripReading;
 }
+
+// A short voice note of the finished list, in the caller's language, for the phone page.
+export async function writeVoiceNote(langName: string, details: string): Promise<string> {
+  const res = await client.messages.create({
+    model: MODEL,
+    max_tokens: 1500,
+    ...(modelParams(MODEL) as Partial<Anthropic.MessageCreateParamsNonStreaming>),
+    system:
+      "You write short voice notes that a text-to-speech voice reads to an older person in India. Plain sentences only: no lists, symbols, emojis or markdown. Say rupee amounts as whole numbers followed by the word for rupees. Keep medicine names in English letters.",
+    messages: [
+      {
+        role: "user",
+        content: `Write the voice note in ${langName}, at most 70 words. For each medicine: what to ask for at the Jan Aushadhi store instead of the brand (the generic name and the drug code), then the total saving per month (once), the nearest store's street or area only if it is in the facts (otherwise don't mention stores), and a reminder to show the list to the pharmacist. Facts:\n${details}`,
+      },
+    ],
+  } as Anthropic.MessageCreateParamsNonStreaming);
+  return res.content
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join(" ")
+    .trim();
+}

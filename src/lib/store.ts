@@ -59,7 +59,7 @@ export interface CallState {
   stores?: StoreHit[];
   sent?: { at: number; reminders: { medId: string; brand: string; date: string }[] };
   strip?: { at: number; summary: string };
-  voiceNoteUrl?: string;
+  voiceNote?: { key: string; text: string };
   typed?: { user: string; agent: string }[];
   activity: Activity[];
   ended?: boolean;

@@ -6,6 +6,7 @@ import * as session from "@/server/session";
 import * as state from "@/server/state";
 import * as strip from "@/server/strip";
 import * as typed from "@/server/type";
+import * as voice from "@/server/voice";
 
 export const maxDuration = 60;
 
@@ -23,6 +24,7 @@ async function route(req: Request, ctx: Ctx, method: "GET" | "POST" | "DELETE"):
   if (method === "GET") {
     if (head === "state") return state.GET(req);
     if (head === "ics" && arg) return ics.GET(req, arg);
+    if (head === "voice" && arg) return voice.GET(req, arg);
   }
   if (method === "DELETE" && head === "session") return session.DELETE(req);
   return new Response("not found", { status: 404 });
