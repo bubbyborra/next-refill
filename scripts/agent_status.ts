@@ -3,7 +3,7 @@
 // Usage: npx tsx --env-file=.env.local scripts/agent_status.ts <sid>
 //        npx tsx --env-file=.env.local scripts/agent_status.ts --recent   (every agent of the last 3 days)
 //        npx tsx --env-file=.env.local scripts/agent_status.ts --start-test (start an agent from this
-//          machine on a throwaway channel, watch its status for 10 s, stop it)
+//          machine on a throwaway channel, watch its status for 10 s, stop it; --lang=kn picks the language)
 // Needs the Agora App ID and certificate. If the call's state isn't in this machine's store
 // (the live site keeps it in its own Redis), the agent is found by the call's channel name.
 // Prints no keys.
@@ -104,7 +104,8 @@ async function startTest() {
   const channel = `nr-${sid}`;
   const agentUid = 100;
   const t0 = Date.now();
-  const agentId = await startAgent({ sid, lang: getLang("te"), channel, userUid: 54321, agentUid, baseUrl: process.env.PUBLIC_BASE_URL || "https://next-refill.vercel.app" });
+  const langArg = process.argv.find((a) => a.startsWith("--lang="))?.slice(7) || "te";
+  const agentId = await startAgent({ sid, lang: getLang(langArg), channel, userUid: 54321, agentUid, baseUrl: process.env.PUBLIC_BASE_URL || "https://next-refill.vercel.app" });
   console.log(`started ${agentId} on ${channel} in ${Date.now() - t0} ms`);
   const token = generateConvoAIToken({ appId: appid, appCertificate: process.env.AGORA_APP_CERTIFICATE!, channelName: channel, uid: agentUid });
   const opts = { headers: { Authorization: `agora token=${token}` } };

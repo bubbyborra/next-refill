@@ -10,7 +10,7 @@
 // agent's "Speaking" state on the page (speech-to-text endpointing included).
 //
 // Usage: node scripts/demo_path.mjs [base-url] [lang] [--typed]
-//   defaults: https://next-refill.vercel.app te   (lang: te or hi)
+//   defaults: https://next-refill.vercel.app te   (lang: te, hi, kn, ta or en)
 //   --typed sends each caller line through "Type instead" (the noisy-room path) instead of
 //   speaking it; the agent must still say every reply on the call.
 // Each run is a real call of about two minutes on the project's Agora, Sarvam, Murf and
@@ -27,9 +27,9 @@ const ROOT = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const AUDIO = path.join(ROOT, "scripts", "demo-audio");
 const SCRIPT = JSON.parse(fs.readFileSync(path.join(AUDIO, "lines.json"), "utf8"))[LANG];
 const OUT = path.join(ROOT, "out", "demo-path", `${LANG}${TYPED ? "-typed" : ""}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`);
-const SCRIPT_CHARS = { te: /[ఀ-౿]/, hi: /[ऀ-ॿ]/ }[LANG];
+const SCRIPT_CHARS = { te: /[\u0C00-\u0C7F]/, hi: /[\u0900-\u097F]/, kn: /[\u0C80-\u0CFF]/, ta: /[\u0B80-\u0BFF]/, en: /[A-Za-z]/ }[LANG];
 if (!SCRIPT || !SCRIPT_CHARS) {
-  console.error(`demo_path: no caller lines for "${LANG}" (te or hi)`);
+  console.error(`demo_path: no caller lines for "${LANG}" (te, hi, kn, ta or en)`);
   process.exit(2);
 }
 fs.mkdirSync(OUT, { recursive: true });

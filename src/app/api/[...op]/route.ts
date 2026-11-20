@@ -18,6 +18,7 @@ async function route(req: Request, ctx: Ctx, method: "GET" | "POST" | "DELETE"):
   if (method === "POST") {
     if (head === "llm") return llm.POST(req);
     if (head === "session") return session.POST(req);
+    if (head === "agent") return session.START_AGENT(req);
     if (head === "strip") return strip.POST(req);
     if (head === "type") return typed.POST(req);
   }

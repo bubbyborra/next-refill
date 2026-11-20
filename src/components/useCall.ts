@@ -112,11 +112,21 @@ export function useCall() {
         const res = await fetch("/api/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lang }),
+          body: JSON.stringify({ lang, agent: "later" }),
         });
         const s = (await res.json()) as StartResponse;
         if (!res.ok) throw new Error(s.error || `start failed (${res.status})`);
         setSid(s.sid);
+
+        // The agent starts while this browser joins the channel; it greets once both are in.
+        const agentReady = fetch("/api/agent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sid: s.sid }),
+        }).then(async (r) => {
+          if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error || `agent start failed (${r.status})`);
+        });
+        agentReady.catch(() => {}); // awaited below; this only stops an early "unhandled" warning
 
         const { default: AgoraRTM } = await import("agora-rtm");
         const r = new AgoraRTM.RTM(s.appId, String(s.uid));
@@ -152,6 +162,7 @@ export function useCall() {
         await client.join(s.appId, s.channel, s.token, s.uid);
         if (track) await client.publish([track]);
         rtc.current = client;
+        await agentReady;
 
         poll.current = setInterval(() => refresh(s.sid).catch(() => {}), 1500);
         await refresh(s.sid);
@@ -159,6 +170,10 @@ export function useCall() {
       } catch (e) {
         mic.current?.close();
         mic.current = null;
+        await rtc.current?.leave().catch(() => {});
+        await rtm.current?.logout().catch(() => {});
+        rtc.current = null;
+        rtm.current = null;
         setError((e as Error).message || "Couldn't start the call");
         setPhase("error");
       }
