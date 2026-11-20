@@ -53,6 +53,13 @@ export function useCall() {
     });
   }, []);
 
+  // The agent publishes its state (listening, thinking, speaking) as its RTM presence.
+  const handleAgentState = useCallback((s: string) => {
+    if (s === "speaking" || s === "thinking" || s === "listening") setMood(s);
+    else if (s === "silent") setMood("listening");
+    else setMood("idle");
+  }, []);
+
   const handleMessage = useCallback(
     (raw: unknown) => {
       let msg: Record<string, unknown>;
@@ -69,13 +76,12 @@ export function useCall() {
         const final = who === "you" ? Boolean(msg.final) : Number(msg.turn_status ?? 1) !== 0;
         if (msg.text.trim()) upsertLine({ key: `${who}-${turn}`, who, text: msg.text, final });
       } else if (obj === "message.state" && typeof msg.state === "string") {
-        const s = msg.state as string;
-        setMood(s === "speaking" || s === "thinking" || s === "listening" ? s : "idle");
+        handleAgentState(msg.state);
       } else if (obj === "message.interrupt") {
         setMood("listening");
       }
     },
-    [upsertLine],
+    [upsertLine, handleAgentState],
   );
 
   const refresh = useCallback(async (id: string) => {
@@ -115,6 +121,16 @@ export function useCall() {
         const { default: AgoraRTM } = await import("agora-rtm");
         const r = new AgoraRTM.RTM(s.appId, String(s.uid));
         r.addEventListener("message", (e: { message: unknown }) => handleMessage(e.message));
+        r.addEventListener(
+          "presence",
+          (e: { eventType?: string; publisher?: string; stateChanged?: Record<string, string>; snapshot?: { userId?: string; states?: Record<string, string> }[] | null }) => {
+            if (e.eventType === "REMOTE_STATE_CHANGED" && e.publisher !== String(s.uid) && e.stateChanged?.state) handleAgentState(e.stateChanged.state);
+            else if (e.eventType === "SNAPSHOT") {
+              const agent = e.snapshot?.find((u) => u.userId !== String(s.uid) && u.states?.state);
+              if (agent?.states?.state) handleAgentState(agent.states.state);
+            }
+          },
+        );
         await r.login({ token: s.token });
         await r.subscribe(s.channel);
         rtm.current = r;
@@ -138,7 +154,7 @@ export function useCall() {
         setPhase("error");
       }
     },
-    [handleMessage, refresh],
+    [handleMessage, handleAgentState, refresh],
   );
 
   const stop = useCallback(async () => {

@@ -128,20 +128,36 @@ async function state(sid, tries = 1) {
 const moods = () => page.evaluate(() => window.__moods);
 const quiet = (label) => label === "Listening" || label === "Connected";
 
-// Waits until the agent has spoken since `since`, `until(state)` holds, and the agent has
-// been quiet for 1.5 s. Returns the state and the mood log.
-async function waitForAgent(sid, since, until, timeoutMs = 75000) {
+// The agent's lines on the page, with whether each is final.
+const agentLines = () =>
+  page.$$eval('.nr-line[data-who="agent"] .nr-bubble', (els) => els.map((e) => ({ text: e.innerText.trim(), final: e.getAttribute("data-final") === "yes" })));
+const rtmLog = () => page.evaluate(() => window.__rtm);
+
+// Waits until the agent has answered since `since` (a Speaking state, or more agent lines than
+// `baseline`), `until(state)` holds, and for 1.5 s nothing has changed while the agent is quiet
+// and its last line is final. Returns the state and the logs.
+async function waitForAgent(sid, since, until, baseline, timeoutMs = 75000) {
   const deadline = Date.now() + timeoutMs;
   let s = {};
+  let sig = "";
+  let sigAt = Date.now();
   while (Date.now() < deadline) {
     await sleep(400);
     const log = await moods();
+    const lines = await agentLines();
     s = await state(sid);
-    const spoke = log.some((m) => m.t >= since && m.label === "Speaking");
     const last = log[log.length - 1];
-    if (spoke && until(s) && last && quiet(last.label) && Date.now() - last.t >= 1500) return { ok: true, s, log };
+    const tail = lines[lines.length - 1];
+    const now = `${last?.label}|${lines.length}|${tail?.text.length}|${tail?.final}`;
+    if (now !== sig) {
+      sig = now;
+      sigAt = Date.now();
+    }
+    const spoke = log.some((m) => m.t >= since && m.label === "Speaking") || lines.length > baseline;
+    const settled = (!last || quiet(last.label)) && (!tail || tail.final) && Date.now() - sigAt >= 1500;
+    if (spoke && until(s) && settled) return { ok: true, s, log, lines };
   }
-  return { ok: false, s, log: await moods() };
+  return { ok: false, s, log: await moods(), lines: await agentLines() };
 }
 
 const transcript = () =>
@@ -161,38 +177,42 @@ try {
   result.sid = sid;
 
   // The agent greets first.
-  const greet = await waitForAgent(sid, t0, () => true, 45000);
-  const firstSpeak = greet.log.find((m) => m.t >= t0 && m.label === "Speaking");
-  result.greetingAfterMs = firstSpeak ? firstSpeak.t - t0 : null;
-  if (!greet.ok) throw new Error("the agent never greeted (no Speaking state within 45 s)");
+  const greet = await waitForAgent(sid, t0, () => true, 0, 45000);
+  const firstWord = (await rtmLog()).find((m) => m.object === "assistant.transcription");
+  result.greetingAfterMs = firstWord ? firstWord.t - t0 : null;
+  if (!greet.ok) throw new Error("the agent never greeted (no agent line within 45 s)");
   await page.screenshot({ path: path.join(OUT, "0-greeting.png") });
 
   for (let i = 0; i < TURNS.length; i++) {
     const b64 = fs.readFileSync(path.join(AUDIO, `${LANG}-${i + 1}.mp3`)).toString("base64");
     const said = SCRIPT.lines[i];
+    const baseline = (await agentLines()).length;
     const tStart = Date.now();
     const seconds = await page.evaluate((b) => window.__say(b), b64);
     const tEnd = Date.now();
-    const w = await waitForAgent(sid, tEnd, TURNS[i].until);
+    const w = await waitForAgent(sid, tEnd, TURNS[i].until, baseline);
     const after = w.log.filter((m) => m.t >= tEnd);
+    const msgs = (await rtmLog()).filter((m) => m.t >= tStart);
+    const heard = msgs.find((m) => m.object === "user.transcription" && m.final);
+    const firstAnswer = msgs.find((m) => m.object === "assistant.transcription" && m.t >= tEnd);
     const checking = after.find((m) => m.label === "Checking");
     const speaking = after.find((m) => m.label === "Speaking");
     const turn = {
       said,
+      heardAs: heard?.text ?? null,
       seconds: Math.round(seconds * 10) / 10,
       expect: TURNS[i].what,
       ok: w.ok,
+      firstAgentWordsAfterMs: firstAnswer ? firstAnswer.t - tEnd : null,
       checkingAfterMs: checking ? checking.t - tEnd : null,
       speakingAfterMs: speaking ? speaking.t - tEnd : null,
-      spokeForMs: null,
     };
-    if (speaking) {
-      const quietAgain = after.find((m) => m.t > speaking.t && quiet(m.label));
-      if (quietAgain) turn.spokeForMs = quietAgain.t - speaking.t;
-    }
     turns.push(turn);
     await page.screenshot({ path: path.join(OUT, `${i + 1}-turn.png`) });
-    console.log(`turn ${i + 1}: ${w.ok ? "ok  " : "FAIL"} ${TURNS[i].what}; agent started speaking ${turn.speakingAfterMs ?? "?"} ms after the caller stopped (said for ${turn.seconds} s, started ${tEnd - tStart} ms)`);
+    console.log(
+      `turn ${i + 1}: ${w.ok ? "ok  " : "FAIL"} ${TURNS[i].what}; agent's first words ${turn.firstAgentWordsAfterMs ?? "?"} ms and Speaking state ${turn.speakingAfterMs ?? "?"} ms after the caller stopped (line ${turn.seconds} s)`,
+    );
+    if (heard) console.log(`        heard as: ${heard.text}`);
     if (!w.ok) {
       failures.push(`turn ${i + 1}: ${TURNS[i].what} did not happen within 75 s`);
       break;
