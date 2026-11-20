@@ -338,7 +338,9 @@ function CountUp({ value }: { value: number }) {
     const d = (window as unknown as { design?: DesignRuntime }).design;
     const start = from.current;
     from.current = value;
-    if (d?.reduce || start === value) {
+    // Background tabs pause animation frames, so the number is set outright there, and a timer
+    // makes sure the final value always lands even if frames stop mid-count.
+    if (d?.reduce || start === value || document.hidden) {
       setShown(value);
       return;
     }
@@ -352,7 +354,14 @@ function CountUp({ value }: { value: number }) {
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    const land = setTimeout(() => {
+      cancelAnimationFrame(raf);
+      setShown(value);
+    }, ms + 150);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(land);
+    };
   }, [value, run]);
   return <>{rupees(shown)}</>;
 }
