@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { lang?: string; lat?: number; lon?: number };
   const lang = getLang(body.lang);
   const sid = newId();
-  const channel = `ss-${sid}`;
+  const channel = `nr-${sid}`;
   const userUid = 10000 + Math.floor(Math.random() * 80000);
   const agentUid = 100;
   const state: CallState = { sid, lang: lang.code, createdAt: Date.now(), channel, userUid, agentUid, meds: [], activity: [] };

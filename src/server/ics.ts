@@ -15,7 +15,7 @@ export async function GET(_req: Request, sid: string) {
     const what = med?.ja ? `Buy ${med.ja.name} (Jan Aushadhi code ${med.ja.code}) instead of ${med.brand}` : `Refill ${r.brand}`;
     return [
       "BEGIN:VEVENT",
-      `UID:${sid}-${r.medId}@same-salt`,
+      `UID:${sid}-${r.medId}@next-refill`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${day}`,
       `SUMMARY:${esc(`Refill: ${r.brand}`)}`,
