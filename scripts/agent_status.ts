@@ -85,13 +85,18 @@ async function recent() {
 }
 
 async function startTest() {
-  // --break=NAME appends a line break to that env value first, to see how the agent fails
-  // when a key was saved with a trailing newline.
+  // --break=NAME appends a line break to that env value first, and --wrong=NAME replaces it
+  // with a made-up value, to see how the agent fails when a key was saved wrongly.
   for (const a of process.argv.slice(3)) {
     const m = a.match(/^--break=([A-Z_]+)$/);
     if (m && process.env[m[1]]) {
       process.env[m[1]] += "\n";
       console.log(`(${m[1]} now ends with a line break)`);
+    }
+    const w = a.match(/^--wrong=([A-Z_]+)$/);
+    if (w) {
+      process.env[w[1]] = "not-a-real-key-0000000000000000";
+      console.log(`(${w[1]} replaced with a made-up value)`);
     }
   }
   const appid = process.env.AGORA_APP_ID!;
