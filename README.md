@@ -3,18 +3,18 @@
 **Same medicine. Jan Aushadhi price.**
 
 ![A spoken Telugu call on the live site: Telma 40 and Glycomet 500 matched to Jan Aushadhi drug codes 300 and 145, saving ₹302 a month, nearest store found, list sent to the phone](docs/core-loop.gif)
-<sub>A spoken call on the live site, sped up 5×. The caller is a synthetic Telugu voice from our test script (scripts/demo_path.mjs); the agent, the matching and the saving are live. Brand prices are as the caller said them.</sub>
+<sub>A real call on the live site, sped up 5×. The caller's voice is a synthetic test voice; everything else is live.</sub>
 
-Say the medicines you buy every month, in your own language, and Next Refill finds the exact same salt and strength on the government's Jan Aushadhi list, tells you what you'd save, and puts the list for the pharmacist on your phone.
+Say the medicines you buy every month in your own language, or show the strip to the camera, and Next Refill finds the same active ingredient (the salt) in the same strength on the government's Jan Aushadhi list, tells you what you'd save, and puts the list for the pharmacist on your phone.
 
-It needs a real-time voice agent because the people it's for know their tablets by brand name and speak Telugu, Tamil, Hindi or Kannada, not the English fine print on the strip: Agora's Conversational AI runs the call and Murf's Falcon voices answer in their language.
+It needs a real-time voice agent because the people it's for know their tablets by brand name and speak Telugu, Tamil, Hindi or Kannada, not the English fine print on the strip: Agora's Conversational AI runs the call and Murf's Falcon voices answer in their language. It speaks nine Indian languages; Telugu, Hindi, Tamil, Kannada and English are tested end to end with spoken calls.
 
 **Live:** https://next-refill.vercel.app
 
 ## Try it in 30 seconds
 
 1. Open the live app, pick your language and press **Start talking** (or type in the box if the room is noisy).
-2. Say a medicine you buy, how many a day and the price on the strip, for example "Telma 40, one a day, 230 rupees for 30" (an illustrative price).
+2. Say a medicine you buy, how many a day and the price on the strip, for example "Telma 40, one a day, 230 rupees for 30" (an illustrative price). Or press **Show the strip to the camera** and hold up the side with the composition and MRP.
 3. Hear the saving. Say your area, say "yes" when it offers to send the list, and scan the QR code: the list for the pharmacist, directions, refill reminders and a voice note in your language.
 
 ## Why it matters
@@ -62,7 +62,7 @@ Limits, in numbers: zero real users; the break test covers matching only, not sp
 - The live app: https://next-refill.vercel.app (a call works without a microphone too: type instead).
 - The data, with sources: [`data/source/`](data/source). Rebuild with `python3 scripts/build_products.py data/source/pmbi-product-mrp-list.tsv` and `python3 scripts/build_stores.py`.
 - All checks: `./check.sh` (types, the 20 medicines, the break test).
-- A spoken call end to end on the live site: `npx playwright install chromium`, then `node scripts/demo_path.mjs https://next-refill.vercel.app te` (or `hi`). A synthetic caller's voice goes in as the microphone, and it checks every step: both medicines matched, the ₹302 saving, the store, the list sent, the phone page, the reminders file and the voice note. Each run is a real call of about two minutes.
+- A spoken call end to end on the live site: `npx playwright install chromium`, then `node scripts/demo_path.mjs https://next-refill.vercel.app te` (or `hi`, `kn`, `ta`, `en`; add `--typed` for the Type-instead path). A synthetic caller's voice goes in as the microphone, and it checks every step: both medicines matched, the ₹302 saving, the store, the list sent, the phone page, the reminders file and the voice note. Each run is a real call of about two minutes. `node scripts/strip_path.mjs` does the same for the strip camera, with a test label.
 
 ## What doesn't work yet
 
@@ -71,7 +71,7 @@ Limits, in numbers: zero real users; the break test covers matching only, not sp
 - The brand-to-composition step uses an AI model's knowledge of Indian brands. That's why it asks you to check the strip, and why the camera reads the strip directly.
 - It can't order medicines or check a store's stock: there's no public API for either.
 - The lines in Kannada, Malayalam, Bengali, Marathi and Gujarati haven't been checked by native speakers yet.
-- Spoken calls are tested end to end with synthetic voices in Telugu and Hindi (`scripts/demo_path.mjs`), not yet with many real speakers or in a noisy hall.
+- Spoken calls are tested end to end with synthetic voices in Telugu, Hindi, Tamil, Kannada and English (`scripts/demo_path.mjs`), not yet with many real speakers or in a noisy hall. Malayalam, Bengali, Marathi and Gujarati calls haven't been tested by voice.
 - Not medical advice. It only compares prices for the same composition; show the list to your pharmacist, and to your doctor if in doubt.
 
 ## Run it locally
