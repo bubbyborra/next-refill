@@ -36,6 +36,8 @@ export function useCall() {
   const [state, setState] = useState<PublicState | null>(null);
   const [muted, setMuted] = useState(false);
   const [noMic, setNoMic] = useState(false);
+  // "reconnecting" while Agora's connection drops and comes back (a venue's Wi-Fi blips).
+  const [net, setNet] = useState<"ok" | "reconnecting">("ok");
   const rtc = useRef<IAgoraRTCClient | null>(null);
   const mic = useRef<IMicrophoneAudioTrack | null>(null);
   const rtm = useRef<{ logout: () => Promise<unknown> } | null>(null);
@@ -155,6 +157,7 @@ export function useCall() {
         rtm.current = r;
 
         const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+        client.on("connection-state-change", (cur) => setNet(cur === "RECONNECTING" ? "reconnecting" : "ok"));
         client.on("user-published", async (user, mediaType) => {
           await client.subscribe(user, mediaType);
           if (mediaType === "audio") user.audioTrack?.play();
@@ -228,5 +231,5 @@ export function useCall() {
     [sid, upsertLine, refresh],
   );
 
-  return { phase, error, sid, lines, mood, state, muted, noMic, start, stop, toggleMute, refresh, typeLine };
+  return { phase, error, sid, lines, mood, state, muted, noMic, net, start, stop, toggleMute, refresh, typeLine };
 }

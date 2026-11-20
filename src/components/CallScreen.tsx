@@ -117,7 +117,7 @@ export function CallScreen({ children, footer }: { children?: ReactNode; footer?
               <div className="nr-panel nr-convo">
                 <WindowBar />
                 <div className="nr-convo__head">
-                  <MoodPill mood={live ? call.mood : "idle"} ended={call.phase === "ended"} />
+                  <MoodPill mood={live ? call.mood : "idle"} ended={call.phase === "ended"} reconnecting={live && call.net === "reconnecting"} />
                   <div className="nr-convo__ctrls">
                     {live && (
                       <>
@@ -190,9 +190,9 @@ function MicIcon() {
   );
 }
 
-function MoodPill({ mood, ended }: { mood: string; ended: boolean }) {
-  const label = ended ? "Call ended" : mood === "speaking" ? "Speaking" : mood === "thinking" ? "Checking" : mood === "listening" ? "Listening" : "Connected";
-  const state = ended ? "ended" : mood === "speaking" ? "speaking" : mood === "thinking" ? "thinking" : "on";
+function MoodPill({ mood, ended, reconnecting }: { mood: string; ended: boolean; reconnecting?: boolean }) {
+  const label = ended ? "Call ended" : reconnecting ? "Reconnecting…" : mood === "speaking" ? "Speaking" : mood === "thinking" ? "Checking" : mood === "listening" ? "Listening" : "Connected";
+  const state = ended ? "ended" : reconnecting ? "thinking" : mood === "speaking" ? "speaking" : mood === "thinking" ? "thinking" : "on";
   return (
     <span className="nr-mood" data-state={state}>
       <span className="nr-mood__dot" />
