@@ -161,7 +161,8 @@ async function waitForAgent(sid, since, until, baseline, timeoutMs = 75000) {
       sigAt = Date.now();
     }
     const spoke = log.some((m) => m.t >= since && m.label === "Speaking") || lines.length > baseline;
-    const settled = (!last || quiet(last.label)) && (!tail || tail.final) && Date.now() - sigAt >= 1500;
+    // done talking: quiet, and the last line final (or quiet for 3 s: a final marker can get lost)
+    const settled = (!last || quiet(last.label)) && (!tail || tail.final || (last && Date.now() - last.t >= 3000)) && Date.now() - sigAt >= 1500;
     if (spoke && until(s) && settled) return { ok: true, s, log, lines };
   }
   return { ok: false, s, log: await moods(), lines: await agentLines() };
