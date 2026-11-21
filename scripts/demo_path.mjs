@@ -72,9 +72,12 @@ function pageHooks() {
     const src = a.createBufferSource();
     src.buffer = buf;
     src.connect(d);
+    // ends when the clip has played, or a few seconds after it should have (a stalled
+    // audio clock must not hang the check)
     await new Promise((r) => {
       src.onended = r;
       src.start();
+      setTimeout(r, buf.duration * 1000 + 4000);
     });
     return buf.duration;
   };
@@ -122,7 +125,7 @@ page.on("console", (m) => consoleLines.push(`${m.type()}: ${m.text()}`.slice(0, 
 async function state(sid, tries = 1) {
   for (let i = 0; i < tries; i++) {
     try {
-      const r = await fetch(`${BASE}/api/state?sid=${sid}`, { cache: "no-store" });
+      const r = await fetch(`${BASE}/api/state?sid=${sid}`, { cache: "no-store", signal: AbortSignal.timeout(8000) });
       if (r.ok) return await r.json();
     } catch {}
     if (i < tries - 1) await sleep(1000);
@@ -246,10 +249,10 @@ try {
     const phoneText = await phone.innerText("body");
     if (!phoneText.includes("300") || !phoneText.includes("145")) failures.push("the phone page doesn't show both drug codes (300, 145)");
     await phone.close();
-    const ics = await fetch(`${BASE}/api/ics/${sid}`);
+    const ics = await fetch(`${BASE}/api/ics/${sid}`, { signal: AbortSignal.timeout(20000) });
     result.ics = { status: ics.status, type: ics.headers.get("content-type") };
     if (ics.status !== 200 || !String(result.ics.type).includes("calendar")) failures.push(`reminders file: ${ics.status} ${result.ics.type}`);
-    const voice = await fetch(`${BASE}/api/voice/${sid}`);
+    const voice = await fetch(`${BASE}/api/voice/${sid}`, { signal: AbortSignal.timeout(60000) });
     const bytes = (await voice.arrayBuffer()).byteLength;
     result.voiceNote = { status: voice.status, type: voice.headers.get("content-type"), bytes };
     if (voice.status !== 200 || bytes < 10000) failures.push(`voice note: ${voice.status}, ${bytes} bytes`);

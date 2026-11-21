@@ -64,12 +64,11 @@ main();
 // Every agent this project started in the last 3 days, with its status (running, stopped, failed).
 async function recent() {
   const appid = process.env.AGORA_APP_ID!;
-  const token = generateConvoAIToken({ appId: appid, appCertificate: process.env.AGORA_APP_CERTIFICATE!, channelName: "nr-list", uid: 100 });
-  const opts = { headers: { Authorization: `agora token=${token}` } };
+  const fresh = () => ({ headers: { Authorization: `agora token=${generateConvoAIToken({ appId: appid, appCertificate: process.env.AGORA_APP_CERTIFICATE!, channelName: "nr-list", uid: 100 })}` } });
   const client = agora();
   for (const state of ["2", "4", "6"]) {
     try {
-      const page = await client.agents.list({ appid, state, from_time: Math.floor(Date.now() / 1000) - 3 * 86400, limit: 50 }, opts);
+      const page = await client.agents.list({ appid, state, from_time: Math.floor(Date.now() / 1000) - 3 * 86400, limit: 50 }, fresh());
       const rows: string[] = [];
       for await (const it of page as AsyncIterable<{ agent_id: string; start_ts: number; stop_ts?: number; status: string }>) {
         rows.push(`${new Date(it.start_ts * 1000).toISOString().slice(5, 19)}Z ${it.status} ${it.stop_ts ? `${it.stop_ts - it.start_ts}s` : "running"} ${JSON.stringify(it).slice(0, 200)}`);
