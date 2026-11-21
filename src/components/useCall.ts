@@ -50,6 +50,8 @@ export function useCall() {
   const poll = useRef<ReturnType<typeof setInterval> | null>(null);
   // The agent's uid as last seen, and how to log in to RTM again (see refresh).
   const agentUidSeen = useRef<number | null>(null);
+  // Whether anything has come from the agent over RTM in this call (see the watchdog in start).
+  const rtmHeard = useRef(false);
   const rtmConnect = useRef<(() => Promise<void>) | null>(null);
 
   const upsertLine = useCallback((l: Line) => {
@@ -126,6 +128,7 @@ export function useCall() {
   const start = useCallback(
     async (lang: string) => {
       setError(null);
+      rtmHeard.current = false;
       setLines([]);
       setState(null);
       setPhase("starting");
@@ -160,9 +163,10 @@ export function useCall() {
         const { default: AgoraRTM } = await import("agora-rtm");
         const connectRtm = async () => {
           const r = new AgoraRTM.RTM(s.appId, String(s.uid));
-          r.addEventListener("message", (e: { message: unknown }) =>
-            handleMessage(e.message),
-          );
+          r.addEventListener("message", (e: { message: unknown }) => {
+            rtmHeard.current = true;
+            handleMessage(e.message);
+          });
           type UserState = { userId?: string; states?: Record<string, string> };
           r.addEventListener(
             "presence",
@@ -182,7 +186,9 @@ export function useCall() {
                   type: e.eventType,
                   publisher: e.publisher,
                   state: e.stateChanged?.state,
+                  users: e.snapshot?.map((u) => u.userId),
                 });
+              if (e.eventType === "REMOTE_STATE_CHANGED" && e.publisher !== String(s.uid)) rtmHeard.current = true;
               const agentIn = (list?: UserState[] | null) =>
                 list?.find((u) => u.userId !== String(s.uid) && u.states?.state)
                   ?.states?.state;
@@ -223,6 +229,20 @@ export function useCall() {
         poll.current = setInterval(() => refresh(s.sid).catch(() => {}), 1500);
         await refresh(s.sid);
         setPhase("live");
+
+        // Now and then the page hears nothing from the agent over RTM for a whole call, though
+        // the agent talks (its audio comes over RTC) and the bill still fills from the server.
+        // If nothing has arrived 6 s after going live, log in to RTM again, twice at most.
+        const watch = async (tries: number) => {
+          await new Promise((res) => setTimeout(res, 6000));
+          if (rtmHeard.current || !rtmConnect.current || tries <= 0) return;
+          const old = rtm.current;
+          rtm.current = null;
+          await old?.logout().catch(() => {});
+          await rtmConnect.current().catch(() => {});
+          void watch(tries - 1);
+        };
+        void watch(2);
       } catch (e) {
         mic.current?.close();
         mic.current = null;
