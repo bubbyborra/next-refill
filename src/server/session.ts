@@ -36,12 +36,12 @@ export async function POST(req: Request) {
   }
   logActivity(state, `Call started in ${lang.name}`);
   await putState(state);
-  // The browser sends agent: "later" and starts the agent itself with POST /api/agent while it
-  // joins the channel, which cuts a second or two before the greeting. Other callers get the
-  // agent started here, as before.
+  // The agent starts before the browser joins: an agent that joins after the browser is in
+  // the channel often can't reach it over RTM (no transcript, no state). With agent: "later"
+  // the caller starts it with POST /api/agent instead (kept for scripts, not the app).
   if (body.agent !== "later") {
     try {
-      await startAgentFor(state, baseUrl(req));
+      await startHealthyAgent(state, baseUrl(req));
     } catch (e) {
       console.error("agent start failed", e);
       return jsonError(`Couldn't start the voice agent: ${(e as Error).message}`, 502);
@@ -50,11 +50,47 @@ export async function POST(req: Request) {
   return Response.json({
     sid,
     appId: envValue("AGORA_APP_ID"),
-    channel,
+    channel: state.channel,
     uid: userUid,
     agentUid,
-    token: clientToken(channel, userUid),
+    token: clientToken(state.channel, userUid),
   });
+}
+
+// Agora fails about one agent start in four, one to two seconds in ("agent exits with reason:
+// RTC connection error"), and a replacement that joins after the browser doesn't reliably get
+// its messages through. So the session waits until the agent has lived 2.5 s; if it failed,
+// a fresh agent starts on a new channel, still before the browser joins (three tries in all).
+async function startHealthyAgent(s: CallState, base: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) s.channel = `nr-${s.sid}-${attempt}`;
+    const agentId = await launchAgent(s, base);
+    if (!(await failsWithin({ agentId, channel: s.channel, agentUid: s.agentUid }, 2500))) {
+      watchAgent(s, base, agentId);
+      return;
+    }
+    console.warn(`[session ${s.sid}] agent ${agentId} failed in its first seconds; starting a fresh one on a new channel (${attempt + 1})`);
+  }
+  throw new Error("the voice agent failed to start three times; please try again");
+}
+
+async function failsWithin(a: { agentId: string; channel: string; agentUid: number }, ms: number): Promise<boolean> {
+  const until = Date.now() + ms;
+  while (Date.now() < until) {
+    await new Promise((r) => setTimeout(r, 800));
+    if ((await agentStatus(a)) === "FAILED") return true;
+  }
+  return false;
+}
+
+// Starts an agent on the call's current channel and records it (and the channel) in the state.
+async function launchAgent(s: CallState, base: string): Promise<string> {
+  const agentId = await startAgent({ sid: s.sid, lang: getLang(s.lang), channel: s.channel, userUid: s.userUid, agentUid: s.agentUid, baseUrl: base });
+  await updateState(s.sid, (x) => {
+    x.agentId = agentId;
+    x.channel = s.channel;
+  });
+  return agentId;
 }
 
 // Starts the call's agent once (a second request for the same call does nothing).
@@ -74,20 +110,15 @@ export async function START_AGENT(req: Request) {
 }
 
 async function startAgentFor(s: CallState, base: string): Promise<void> {
-  const { sid, channel, userUid, agentUid } = s;
-  const opts = { sid, lang: getLang(s.lang), channel, userUid, agentUid, baseUrl: base };
-  const agentId = await startAgent(opts);
-  const after1 = await updateState(sid, (x) => {
-    x.agentId = agentId;
-  });
-  // Ended while the agent was starting: stop it again.
-  if (after1.ended) {
-    await stopAgent({ agentId, channel, agentUid }).catch((e) => console.error("stop failed", e));
-    return;
-  }
-  // Agora now and then fails an agent a second or more after a good start ("agent exits with
-  // reason: RTC connection error"). After the response has gone, watch the agent for about 9 s
-  // and start a fresh one on the same channel if it fails (twice at most).
+  const agentId = await launchAgent(s, base);
+  watchAgent(s, base, agentId);
+}
+
+// After the response has gone: if the agent still fails later, start a replacement on the same
+// channel with a new uid (twice at most). A backstop only: its messages may not reach the page.
+function watchAgent(s: CallState, base: string, agentId: string): void {
+  const { sid, channel, agentUid } = s;
+  const opts = { sid, lang: getLang(s.lang), channel, userUid: s.userUid, agentUid, baseUrl: base };
   after(async () => {
     let current = agentId;
     let currentUid = agentUid;
